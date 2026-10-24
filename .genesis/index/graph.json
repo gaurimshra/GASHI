@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 2,
+  "project": "web_agent_security",
+  "revision": null,
+  "sourceHash": "88628832366475b8be5a2d9c4de40b4bcf5927044d3d4ec82c4a1fbd3abb1416",
+  "provenance": {
+    "tool": "genesis-graphizer",
+    "method": "static-analysis",
+    "confidenceScale": "0..1"
+  },
+  "nodes": [
+    {
+      "id": "file:conftest.py",
+      "type": "file",
+      "label": "conftest.py",
+      "path": "conftest.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "c2e5f8cdd684091ebb028484751c1fbf99f4b44103b30b622c96ba81fcc73359"
+    },
+    {
+      "id": "file:gashi/__init__.py",
+      "type": "file",
+      "label": "gashi/__init__.py",
+      "path": "gashi/__init__.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "eda5068c56b230093a5288141c2b14d2d2ab14e95c60350b77a03f15423ee9ab"
+    },
+    {
+      "id": "file:gashi/config.py",
+      "type": "file",
+      "label": "gashi/config.py",
+      "path": "gashi/config.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "65eb5ba1183cffff150b60ef331e42c7b3146fad04cb3023960083c7cf58810c"
+    },
+    {
+      "id": "file:gashi/egress.py",
+      "type": "file",
+      "label": "gashi/egress.py",
+      "path": "gashi/egress.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "fe9ea753895c7c7b5f89fc87cfb0f6eab92104b588419ea5c358c30f499a3da0"
+    },
+    {
+      "id": "file:gashi/ingress.py",
+      "type": "file",
+      "label": "gashi/ingress.py",
+      "path": "gashi/ingress.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "9485ee008188ca596628f58c66ee797f000e1e42ee876a45a1029dbfb5011356"
+    },
+    {
+      "id": "file:gashi/network.py",
+      "type": "file",
+      "label": "gashi/network.py",
+      "path": "gashi/network.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "69f15284f58cd31ec06b187938f66091b1c92532a62b3ecebd55e8b6498cbaac"
+    },
+    {
+      "id": "file:gashi/wrapper.py",
+      "type": "file",
+      "label": "gashi/wrapper.py",
+      "path": "gashi/wrapper.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "669b8abd4334b0e9c9b9aaf3f3a7cbb07d55855b4e8b4c081e1a4b03225f3067"
+    },
+    {
+      "id": "file:testbed/__init__.py",
+      "type": "file",
+      "label": "testbed/__init__.py",
+      "path": "testbed/__init__.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "9aeeb1f39cc3bb9a31f2ba7a9ab5af89c9b80f89cc6eb78905dc417093c94676"
+    },
+    {
+      "id": "file:testbed/mock_server.py",
+      "type": "file",
+      "label": "testbed/mock_server.py",
+      "path": "testbed/mock_server.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "f25f9d627a66c21ba72f2b39e542c381e5f9f43aeda26b7428b9c8c66baa74e6"
+    },
+    {
+      "id": "file:tests/test_redteam.py",
+      "type": "file",
+      "label": "tests/test_redteam.py",
+      "path": "tests/test_redteam.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "457999cf872e21e4691ee8b4ef468460772cd9886844100ea0e680a6a599b66d"
+    },
+    {
+      "id": "file:tests/test_unit_security.py",
+      "type": "file",
+      "label": "tests/test_unit_security.py",
+      "path": "tests/test_unit_security.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "3c874901cc68bfdb53b13ce614cb682ec917aab4a338309844d71552ef6a8688"
+    },
+    {
+      "id": "file:tests/test_wrapper.py",
+      "type": "file",
+      "label": "tests/test_wrapper.py",
+      "path": "tests/test_wrapper.py",
+      "language": "python",
+      "confidence": 1,
+      "extractor": "filesystem",
+      "contentHash": "c9e223002a8d203fc23a0167384fc8a1e32bd8a29b57a9b47eec63b3ba2d4dd1"
+    }
+  ],
+  "edges": [],
+  "warnings": [
+    "Python AST unavailable: Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases."
+  ],
+  "stats": {
+    "unresolvedCalls": 0
+  }
+}

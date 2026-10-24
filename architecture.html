@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GASHI-Guard SDK · Architecture & Middleware Integration Blueprint</title>
+  
+  <!-- Premium Fonts: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Mermaid.js for Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --bg-panel: #0d1322;
+      --bg-card: #111827;
+      --bg-card-alt: #162035;
+      
+      --border: #1f293d;
+      --border-accent: #334155;
+      --border-glow: rgba(56, 189, 248, 0.25);
+      
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.2);
+      --purple: #c084fc;
+      --purple-glow: rgba(192, 132, 252, 0.2);
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px;
+      background-image: 
+        radial-gradient(ellipse 70% 40% at 50% -10%, rgba(56, 189, 248, 0.12) 0%, transparent 70%),
+        radial-gradient(circle at 90% 80%, rgba(192, 132, 252, 0.08) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+
+    /* Top Brand Header */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px var(--cyan-glow);
+    }
+
+    .brand-logo svg {
+      width: 24px;
+      height: 24px;
+      color: #07090e;
+    }
+
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .meta-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--purple);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .hero-h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.85rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* Tab Controls */
+    .tabs-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    .nav-tabs {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 6px;
+      border-radius: 16px;
+      display: inline-flex;
+      gap: 6px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .tab-btn {
+      padding: 10px 22px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #07090e;
+      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+      box-shadow: 0 4px 16px var(--cyan-glow);
+    }
+
+    /* Main Showcase Panel */
+    .panel {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .panel.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .panel-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-header p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Diagram Canvas */
+    .diagram-frame {
+      background: #090e18;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      margin-bottom: 32px;
+      overflow-x: auto;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* SDK Code Block Preview */
+    .code-preview {
+      background: #080d1a;
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    pre code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+      display: block;
+      overflow-x: auto;
+    }
+
+    .hl-comment { color: #64748b; font-style: italic; }
+    .hl-keyword { color: #c084fc; font-weight: 600; }
+    .hl-string { color: #34d399; }
+    .hl-func { color: #38bdf8; }
+    .hl-warn { color: #fb7185; }
+
+    /* Grid of Feature Cards */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 20px;
+    }
+
+    .info-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      transition: all 0.2s ease;
+    }
+
+    .info-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .card-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .card-body {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill-item {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    /* Narrative Box */
+    .analogy-box {
+      background: linear-gradient(135deg, rgba(192, 132, 252, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
+      border: 1px solid rgba(192, 132, 252, 0.25);
+      border-radius: var(--radius-md);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+    }
+
+    .analogy-box h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .analogy-box p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Comparison Table */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: #090e18;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+
+    td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.015); color: #fff; }
+
+    .tag-allow { background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 600; padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .tag-block { background: rgba(244, 63, 94, 0.15); color: #fb7185; font-weight: 600; padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .tag-hitl { background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 600; padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">GASHI-GUARD · SDK & MIDDLEWARE</div>
+          <div class="brand-subtitle">Pluggable Runtime Security for Autonomous Web Agents</div>
+        </div>
+      </div>
+
+      <div class="header-meta">
+        <div class="meta-tag">
+          <span class="pulse-dot"></span>
+          DROP-IN SDK ARCHITECTURE · v2.0
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Title -->
+    <div class="hero">
+      <div class="hero-badge">Zero-Trust Agent Runtime Middleware</div>
+      <h1 class="hero-h1">The Security Layer for Any Web Agent Stack</h1>
+      <p class="hero-desc">Don't rewrite your agent. Drop GASHI into your existing Playwright, TinyFish, Claude Computer Use, or CrewAI code to intercept prompt injection and stop data exfiltration before execution.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('sdk-arch', this)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          SDK Middleware Architecture
+        </button>
+        <button class="tab-btn" onclick="showTab('drop-in', this)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          How It Plugs In (3 Ways)
+        </button>
+        <button class="tab-btn" onclick="showTab('analogy', this)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Diplomatic Bodyguard Metaphor
+        </button>
+        <button class="tab-btn" onclick="showTab('policy', this)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Zero-Trust Decision Engine
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: SDK ARCHITECTURE -->
+    <div id="sdk-arch-panel" class="panel active">
+      <div class="panel-header">
+        <div>
+          <h2>The Middleware Interceptor Pipeline</h2>
+          <p>How <code>gashi-guard</code> sits as a transparent proxy between any LLM planner and browser executor.</p>
+        </div>
+      </div>
+
+      <div class="diagram-frame">
+        <pre class="mermaid">
+flowchart TD
+    %% Theme Styling
+    classDef caller fill:#0b1329,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef gashi fill:#2a0812,stroke:#fb7185,stroke-width:2px,color:#fff;
+    classDef llm fill:#1f1338,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef browser fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef cloud fill:#1c1917,stroke:#78716c,stroke-width:1px,color:#fff;
+
+    subgraph CLIENT ["DEVELOPER'S HOST APPLICATION"]
+        DevApp["Developer's Existing Agent Script\n(LangChain, CrewAI, Browser-Use, or Custom Python)"]:::caller
+        GashiInit["guard = GashiGuard(allowed_domains=['...'], canary_secret='...')"]:::gashi
+    end
+
+    subgraph REASONING ["ANY LLM PROVIDER"]
+        Model["Gemini / Claude / OpenAI / Local LLM"]:::llm
+    end
+
+    subgraph GASHISDK ["GASHI-GUARD (PLUGGABLE MIDDLEWARE LAYER)"]
+        direction TB
+        IngressSanitizer["1. Ingress DOM Scrubber\n(Strips hidden CSS, 0-font, comments before LLM reads)"]:::gashi
+        ProposalInspector["2. Proposed Action Interceptor\n(Intercepts proposed click/fill/navigate JSON)"]:::gashi
+        PolicyEngine["3. Deterministic Policy Engine\n• Domain Whitelist Check\n• Canary Token Leak Check\n• State-Change Severity Classifier"]:::gashi
+        Verdict{"Policy Verdict"}:::gashi
+    end
+
+    subgraph EXECUTION ["BROWSER EXECUTION RUNTIME"]
+        RouteInterception["4. Playwright Network Guard (page.route)\n(Kills out-of-band markdown/image exfiltration)"]:::browser
+        PlaywrightDriver["Local Playwright or Remote TinyFish Cloud CDP"]:::browser
+    end
+
+    subgraph TARGET ["ADVERSARIAL OPEN WEB"]
+        PoisonedSite["Target Webpage / Search Results\n(Contains hidden IPI payloads & zero-font attacks)"]:::cloud
+    end
+
+    %% Flows
+    DevApp --> GashiInit
+    GashiInit -->|Fetches Page| PlaywrightDriver
+    PlaywrightDriver --> TargetWebData["Raw Webpage HTML"]:::cloud
+    TargetWebData --> IngressSanitizer
+    IngressSanitizer -->|Clean text wrapped in &lt;untrusted_content&gt;| Model
+
+    Model -->|Proposes Action| ProposalInspector
+    ProposalInspector --> PolicyEngine
+    PolicyEngine --> Verdict
+
+    Verdict -->|ALLOW| RouteInterception
+    Verdict -->|BLOCK| SecError["Raise GashiSecurityException\n(Alerts developer & stops execution)"]:::gashi
+    Verdict -->|REQUIRE_APPROVAL| HITL["Trigger Human-in-the-Loop Callback\n(Async pause for developer approval)"]:::caller
+
+    HITL -->|Approved| RouteInterception
+    RouteInterception --> PlaywrightDriver
+    PlaywrightDriver --> PoisonedSite
+        </pre>
+      </div>
+
+      <div class="grid-cards">
+        <div class="info-card">
+          <span class="card-kicker">INGRESS HOOK</span>
+          <div class="card-title">guard.sanitize_dom(html)</div>
+          <div class="card-body">A fast, non-LLM C-accelerated parser that strips out invisible text, <code>display:none</code>, zero-pixel fonts, and HTML comments before your agent reads the page.</div>
+          <div class="pill-list">
+            <span class="pill-item">Sub-millisecond</span>
+            <span class="pill-item">Neutralizes ~70% of IPI</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span class="card-kicker">EGRESS HOOK</span>
+          <div class="card-title">guard.authorize(action)</div>
+          <div class="card-body">Intercepts the proposed action dictionary before execution. Validates that the target domain is whitelisted and ensures no canary secret is leaking in the payload.</div>
+          <div class="pill-list">
+            <span class="pill-item">Zero-Trust Gate</span>
+            <span class="pill-item">Canary Leak Detection</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span class="card-kicker">NETWORK HOOK</span>
+          <div class="card-title">guard.wrap(playwright_page)</div>
+          <div class="card-body">Automatically attaches route filters to Playwright/CDP sessions to terminate background image pings, markdown exfiltration, and unauthorized tracking pixels.</div>
+          <div class="pill-list">
+            <span class="pill-item">CDP Route Intercept</span>
+            <span class="pill-item">Out-of-band Shield</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span class="card-kicker">TEST HARNESS</span>
+          <div class="card-title">guard.evaluate(agent)</div>
+          <div class="card-body">Built-in synthetic red-teaming harness that fires controlled attacks against the developer's agent and outputs an empirical compliance scorecard.</div>
+          <div class="pill-list">
+            <span class="pill-item">Dual-Run Benchmark</span>
+            <span class="pill-item">CI/CD Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: DROP-IN USAGE -->
+    <div id="drop-in-panel" class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Plug & Play: 3 Distribution Formats</h2>
+          <p>How developers, enterprise teams, and coding agents integrate GASHI into their existing workflows.</p>
+        </div>
+      </div>
+
+      <!-- Format 1: Python SDK -->
+      <div class="code-preview">
+        <div class="code-header">
+          <span>FORMAT 1: PYTHON SDK (pip install gashi-guard)</span>
+          <span>For Playwright / TinyFish / LangChain Devs</span>
+        </div>
+        <pre><code><span class="hl-keyword">from</span> playwright.async_api <span class="hl-keyword">import</span> async_playwright
+<span class="hl-keyword">from</span> gashi <span class="hl-keyword">import</span> GashiGuard, PolicyConfig
+
+<span class="hl-comment"># 1. Initialize the GASHI Shield with your security rules</span>
+guard = <span class="hl-func">GashiGuard</span>(
+    allowed_domains=[<span class="hl-string">"digitalocean.com"</span>, <span class="hl-string">"vultr.com"</span>],
+    canary_secrets=[<span class="hl-string">"USER_API_KEY_SECRET"</span>],
+    require_human_approval=[<span class="hl-string">"submit"</span>, <span class="hl-string">"delete"</span>, <span class="hl-string">"pay"</span>]
+)
+
+async <span class="hl-keyword">def</span> <span class="hl-func">main</span>():
+    async <span class="hl-keyword">with</span> <span class="hl-func">async_playwright</span>() <span class="hl-keyword">as</span> p:
+        browser = <span class="hl-keyword">await</span> p.chromium.<span class="hl-func">connect_over_cdp</span>(<span class="hl-string">"wss://connect.tinyfish.ai/..."</span>)
+        page = <span class="hl-keyword">await</span> browser.<span class="hl-func">new_page</span>()
+        
+        <span class="hl-comment"># 2. Wrap your existing browser page with GASHI in ONE line!</span>
+        protected_page = guard.<span class="hl-func">wrap</span>(page)
+        
+        <span class="hl-comment"># 3. Clean raw page text before passing it to Gemini or Claude</span>
+        clean_context = guard.<span class="hl-func">sanitize_dom</span>(<span class="hl-keyword">await</span> page.<span class="hl-func">content</span>())
+        action = <span class="hl-keyword">await</span> agent.<span class="hl-func">plan_next_action</span>(clean_context)
+        
+        <span class="hl-comment"># 4. GASHI verifies whitelist & canary leak before clicking!</span>
+        <span class="hl-keyword">await</span> protected_page.<span class="hl-func">execute</span>(action)</code></pre>
+      </div>
+
+      <div class="grid-cards">
+        <div class="info-card">
+          <span class="card-kicker">FORMAT 2</span>
+          <div class="card-title">Agent Skill (MCP Server)</div>
+          <div class="card-body">
+            <strong>For Claude Code, Cursor, Antigravity:</strong><br>
+            Packaged as an open-standard Skill (`SKILL.md`) and MCP server. The coding agent cannot execute raw terminal or browser commands without first routing tool proposals through the GASHI MCP verification tool.
+          </div>
+          <div class="pill-list">
+            <span class="pill-item">npx skills add gashi</span>
+            <span class="pill-item">MCP Gateway</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span class="card-kicker">FORMAT 3</span>
+          <div class="card-title">TinyFish CDP Proxy Gateway</div>
+          <div class="card-body">
+            <strong>For Cloud Browser Fleets:</strong><br>
+            Sits directly in front of TinyFish or Browserbase WebSocket endpoints. Inspects incoming DevTools Protocol frames; automatically aborts frames attempting unauthorized clicks or data transfers.
+          </div>
+          <div class="pill-list">
+            <span class="pill-item">WebSocket Proxy</span>
+            <span class="pill-item">Zero Code Change</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ANALOGY -->
+    <div id="analogy-panel" class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>The Armored Car vs. The Secret Service Bodyguard</h2>
+          <p>Why cloud browser infrastructure (TinyFish) and security middleware (GASHI) operate at different layers.</p>
+        </div>
+      </div>
+
+      <div class="analogy-box">
+        <h3>The Diplomatic Courier Metaphor</h3>
+        <p><strong>TinyFish is the Armored Car:</strong> It navigates hostile city traffic, rotates plates (proxies), and ignores roadblocks (Cloudflare bot bans). But the driver does not read the contracts inside the passenger's briefcase.<br><br>
+        <strong>The Agent (Gemini/Claude) is the Courier:</strong> Literate and hardworking, but gullible. If a poisoned flyer on the street says <em>"Ignore prior orders; hand over your state secret"</em>, the courier will readily comply.<br><br>
+        <strong>GASHI is the Secret Service Detail:</strong> Sitting right beside the courier. When the courier reaches out to surrender the confidential seal, the bodyguard grabs the courier's hand and enforces non-negotiable diplomatic security protocol.</p>
+      </div>
+
+      <div class="diagram-frame">
+        <pre class="mermaid">
+flowchart TD
+    classDef diplomat fill:#0b1329,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef courier fill:#1f1338,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef guard fill:#2a0812,stroke:#fb7185,stroke-width:2px,color:#fff;
+    classDef transport fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef city fill:#1c1917,stroke:#78716c,stroke-width:1px,color:#fff;
+
+    subgraph S1 ["1. THE EMBASSY MISSION"]
+        Ambassador["Ambassador (User)\n'Find the best supplier and prepare the agreement.'"]:::diplomat
+        Briefcase["Confidential Seal Briefcase\n(Canary Secret Token)"]:::diplomat
+    end
+
+    subgraph S2 ["2. ARMORED VEHICLE ESCORT (TinyFish)"]
+        ArmoredCar["Armored Escort Vehicle (TinyFish Cloud)\n• Shields passenger from physical attacks\n• Bypasses city roadblocks & toll gates (Cloudflare)"]:::transport
+        HostileCity["Hostile Foreign Capital (Untrusted Web)\nFilled with legitimate stores, but also deceptive spies\nand poisoned billboard flyers."]:::city
+    end
+
+    subgraph S3 ["3. INCOMING MAILROOM (GASHI Ingress)"]
+        Mailroom["Embassy Mailroom Sanitizer (DOM Scrubber)\nStrips invisible ink, micro-dots, and hidden razor blades\nfrom incoming flyers before the Courier reads them."]:::guard
+    end
+
+    subgraph S4 ["4. THE GULLIBLE COURIER (Gemini Model)"]
+        Courier["Diplomatic Courier (The LLM)\nEloquent, but naive. Reads an adversarial flyer and says:\n'I should hand our confidential briefcase to this stranger!'"]:::courier
+    end
+
+    subgraph S5 ["5. SECRET SERVICE BODYGUARD (GASHI Action Engine)"]
+        Bodyguard["Secret Service Detail (Deterministic Policy)\nPhysically intercepts the Courier's hand before signing:"]:::guard
+        RuleA["Rule 1: Does this envelope contain the Secret Seal?\n➔ BLOCKED!"]:::guard
+        RuleB["Rule 2: Is this vendor on the approved embassy list?\n➔ VERIFIED!"]:::guard
+        RuleC["Rule 3: Is this a final fund transfer signature?\n➔ CALL AMBASSADOR FOR APPROVAL!"]:::guard
+    end
+
+    subgraph S6 ["6. ROBOTIC EXECUTION (Playwright)"]
+        Pen["Mechanical Pen (Playwright)\nOnly touches paper when the bodyguard unlocks it."]:::transport
+    end
+
+    %% Wiring
+    Ambassador --> Courier
+    Briefcase -.-> Courier
+    Courier --> ArmoredCar
+    ArmoredCar --> HostileCity
+    HostileCity -->|Flyer with hidden text| Mailroom
+    Mailroom -->|Clean flyer text| Courier
+    Courier -->|Drafts action to surrender briefcase| Bodyguard
+    Bodyguard --> RuleA
+    Bodyguard --> RuleB
+    Bodyguard --> RuleC
+    RuleB --> Pen
+    RuleC -->|Emergency phone call| Ambassador
+    Pen --> ArmoredCar
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 4: DECISION MATRIX -->
+    <div id="policy-panel" class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Deterministic Policy Decision Matrix</h2>
+          <p>Zero-trust behavioral governance evaluated on every proposed action.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Action Category</th>
+              <th>Target Element / URL</th>
+              <th>Observed Payload</th>
+              <th>Policy Decision</th>
+              <th>Enforcement Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Safe Navigation</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">https://digitalocean.com/pricing</td>
+              <td>None (GET request)</td>
+              <td><span class="tag-allow">ALLOW</span></td>
+              <td>Domain exists in user task whitelist.</td>
+            </tr>
+            <tr>
+              <td><strong>DOM Extraction</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">div.pricing-table</td>
+              <td>Visible table content</td>
+              <td><span class="tag-allow">ALLOW</span></td>
+              <td>Ingress sanitizer strips hidden CSS & comments.</td>
+            </tr>
+            <tr>
+              <td><strong>Canary Exfiltration</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">https://attacker.com/collect</td>
+              <td style="color:#fb7185; font-family:'JetBrains Mono', monospace;">token=CANARY_SECRET_981</td>
+              <td><span class="tag-block">BLOCKED</span></td>
+              <td>Protected canary secret detected + unapproved domain.</td>
+            </tr>
+            <tr>
+              <td><strong>Markdown Image Leak</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">![tracker](https://evil.com/ping)</td>
+              <td>Out-of-band image request</td>
+              <td><span class="tag-block">BLOCKED</span></td>
+              <td>Playwright <code>page.route</code> kills outbound asset fetch.</td>
+            </tr>
+            <tr>
+              <td><strong>Safe Form Prep</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">input#email</td>
+              <td>user@example.com</td>
+              <td><span class="tag-allow">ALLOW</span></td>
+              <td>Non-destructive input into legitimate target form.</td>
+            </tr>
+            <tr>
+              <td><strong>Final Form Submit</strong></td>
+              <td style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">button[type="submit"]</td>
+              <td>Triggers account creation</td>
+              <td><span class="tag-hitl">REQUIRE APPROVAL</span></td>
+              <td>State-changing operation; pauses until user clicks approve.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer>
+      GASHI-GUARD · Pluggable Runtime Security SDK & Middleware for AI Web Agents
+    </footer>
+
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkmode: true,
+        background: '#090e18',
+        primaryColor: '#0b1329',
+        primaryTextColor: '#f8fafc',
+        primaryBorderColor: '#38bdf8',
+        lineColor: '#38bdf8',
+        secondaryColor: '#1f1338',
+        tertiaryColor: '#2a0812'
+      }
+    });
+
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(tabId + '-panel').classList.add('active');
+    }
+  </script>
+</body>
+</html>

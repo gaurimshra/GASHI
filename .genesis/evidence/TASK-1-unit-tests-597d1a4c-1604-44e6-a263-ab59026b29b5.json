@@ -1,0 +1,30 @@
+{
+  "task": "TASK-1",
+  "gate": "unit-tests",
+  "kind": "command",
+  "attempt": "597d1a4c-1604-44e6-a263-ab59026b29b5",
+  "command": "pytest tests/test_unit_security.py",
+  "started_at": "2026-10-24T15:17:04.435Z",
+  "observed_at": "2026-10-24T15:17:10.484Z",
+  "exit_code": 2,
+  "signal": null,
+  "stdout": "============================= test session starts =============================\r\nplatform win32 -- Python 3.13.5, pytest-8.4.2, pluggy-1.6.0\r\nrootdir: C:\\Users\\defaultuser100000\\Web_Agent_Security\r\nplugins: anyio-4.12.1, langsmith-0.7.3, asyncio-1.4.0\r\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\r\ncollected 0 items / 1 error\r\n\r\n=================================== ERRORS ====================================\r\n________________ ERROR collecting tests/test_unit_security.py _________________\r\nImportError while importing test module 'C:\\Users\\defaultuser100000\\Web_Agent_Security\\tests\\test_unit_security.py'.\r\nHint: make sure your test modules/packages have valid Python names.\r\nTraceback:\r\n..\\..\\hp\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\importlib\\__init__.py:88: in import_module\r\n    return _bootstrap._gcd_import(name[level:], package, level)\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\ntests\\test_unit_security.py:3: in <module>\r\n    from gashi.config import PolicyConfig, BrowserAction\r\nE   ModuleNotFoundError: No module named 'gashi'\r\n=========================== short test summary info ===========================\r\nERROR tests/test_unit_security.py\r\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\r\n============================== 1 error in 0.64s ===============================\r\n",
+  "stderr": "",
+  "failure": "command-failed",
+  "receipt": null,
+  "revision": {
+    "commit": null,
+    "dirty": null
+  },
+  "source_hash": "0c79398f463825ec5edba99ff94c07a4facb151fdfcda11682db1de0b9f8f2e9",
+  "before_hash": "0c79398f463825ec5edba99ff94c07a4facb151fdfcda11682db1de0b9f8f2e9",
+  "config_hash": "1ea7cb37bb75b8633eacdc40b82f03a7e53e9ef4fe1a00c465ebf3225f83affe",
+  "environment": {
+    "node": "v24.14.0",
+    "platform": "win32",
+    "arch": "x64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "652656e60cb58a09e94e65694f2b159f22bcdb72aa5ba67317a63cdcb48d79c7"
+}

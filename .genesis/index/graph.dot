@@ -1,0 +1,17 @@
+digraph genesis {
+  rankdir=LR;
+  node [shape=box,fontname="system-ui"];
+  "file:conftest.py" [label="conftest.py",class="file"];
+  "file:gashi/__init__.py" [label="gashi/__init__.py",class="file"];
+  "file:gashi/config.py" [label="gashi/config.py",class="file"];
+  "file:gashi/egress.py" [label="gashi/egress.py",class="file"];
+  "file:gashi/ingress.py" [label="gashi/ingress.py",class="file"];
+  "file:gashi/network.py" [label="gashi/network.py",class="file"];
+  "file:gashi/wrapper.py" [label="gashi/wrapper.py",class="file"];
+  "file:testbed/__init__.py" [label="testbed/__init__.py",class="file"];
+  "file:testbed/mock_server.py" [label="testbed/mock_server.py",class="file"];
+  "file:tests/test_redteam.py" [label="tests/test_redteam.py",class="file"];
+  "file:tests/test_unit_security.py" [label="tests/test_unit_security.py",class="file"];
+  "file:tests/test_wrapper.py" [label="tests/test_wrapper.py",class="file"];
+
+}

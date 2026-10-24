@@ -1,0 +1,469 @@
+{
+  "schema_version": 2,
+  "project": {
+    "name": "web_agent_security",
+    "mode": "init",
+    "profile": "prototype",
+    "objective": "Web agent security research and testing",
+    "constraints": [],
+    "non_goals": [],
+    "trust_boundary": "local repository",
+    "created_at": "2026-10-24T07:00:16.987Z",
+    "updated_at": "2026-10-24T15:25:37.708Z"
+  },
+  "policy": {
+    "ponytail": "full",
+    "autonomy": "human-in-the-loop",
+    "learned_rule_promotion": "human-required",
+    "cleanup": "propose-only",
+    "traces": {
+      "storage": "local",
+      "commit_raw": false,
+      "redact_secrets": true
+    }
+  },
+  "lifecycle": {
+    "phase": "verify",
+    "status": "ready",
+    "active_task": null,
+    "blocker": null,
+    "next_action": "Review completed work and choose the next bounded outcome."
+  },
+  "commands": {},
+  "workflow": {
+    "type": "new-product",
+    "started_at": "2026-10-24T07:00:16.990Z",
+    "spec_check": {
+      "at": "2026-10-24T07:12:58.125Z",
+      "source_hash": "8f19db23652e8ff5f18061cd6e49e84cc180373cac285b38456930bec78b9729",
+      "requirements": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "FR-1",
+        "FR-2",
+        "FR-3",
+        "FR-4",
+        "FR-5",
+        "FR-6",
+        "FR-7",
+        "NFR-1",
+        "NFR-2",
+        "NFR-3",
+        "NFR-4"
+      ]
+    },
+    "plan_check": {
+      "at": "2026-10-24T15:19:12.904Z",
+      "source_hash": "5789dfb202f76f5883b76a06c23d26f59b2aa4292b6a15f5fce0b80ea2610fbb"
+    },
+    "plan_approval": {
+      "human": "User",
+      "reason": "User approved 3-task phased implementation plan and building milestone by milestone",
+      "at": "2026-10-24T15:19:28.524Z",
+      "source_hash": "5789dfb202f76f5883b76a06c23d26f59b2aa4292b6a15f5fce0b80ea2610fbb"
+    }
+  },
+  "artifacts": [
+    {
+      "id": "SPEC-1",
+      "type": "specification",
+      "path": "SPEC.md",
+      "status": "approved",
+      "requirements": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "FR-1",
+        "FR-2",
+        "FR-3",
+        "FR-4",
+        "FR-5",
+        "FR-6",
+        "FR-7",
+        "NFR-1",
+        "NFR-2",
+        "NFR-3",
+        "NFR-4"
+      ],
+      "source_hash": "8f19db23652e8ff5f18061cd6e49e84cc180373cac285b38456930bec78b9729",
+      "approval": {
+        "human": "User",
+        "reason": "User reviewed and confirmed project architecture, SDK scope, and requirements.",
+        "at": "2026-10-24T15:04:15.136Z",
+        "source_hash": "8f19db23652e8ff5f18061cd6e49e84cc180373cac285b38456930bec78b9729"
+      }
+    }
+  ],
+  "assumptions": [],
+  "invariants": [],
+  "decisions": [],
+  "knowledge": [],
+  "tasks": [
+    {
+      "id": "SPEC-1",
+      "outcome": "Produce an approved, implementation-ready product specification",
+      "state": "done",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "SPEC.md"
+      ],
+      "dependencies": [],
+      "requirements": [],
+      "gates": [
+        {
+          "id": "independent-review",
+          "command": "",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "human": "User",
+            "reason": "User reviewed and confirmed project architecture, SDK scope, and requirements.",
+            "source_hash": "20aa68b189dd668807077e6f31b06c4ce5351c2ff55302a698ef4618aeaab5df",
+            "observed_at": "2026-10-24T15:04:15.136Z"
+          },
+          "kind": "review"
+        }
+      ],
+      "next_action": "Interview the human, record durable context, and replace every placeholder in SPEC.md.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-24T07:00:16.990Z",
+      "updated_at": "2026-10-24T15:04:15.136Z"
+    },
+    {
+      "id": "TASK-1",
+      "outcome": "Implement core GASHI-Guard SDK security engine (Ingress DOM Sanitizer and Egress Action Policy Engine)",
+      "state": "done",
+      "risk": "low",
+      "owner": null,
+      "scope": [
+        "gashi",
+        "tests",
+        ".gitignore",
+        "requirements.txt",
+        "conftest.py"
+      ],
+      "dependencies": [],
+      "requirements": [
+        "FR-1",
+        "FR-2",
+        "FR-3",
+        "FR-4",
+        "NFR-1"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [],
+      "gates": [
+        {
+          "id": "unit-tests",
+          "kind": "command",
+          "command": "pytest tests/test_unit_security.py",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/TASK-1-unit-tests-b5a3ec72-0905-47b5-98c7-7b1d26b8153e.json",
+            "hash": "c779b2e2f605d75b6619a645649ef7806684d0e9903c8f8ffb5f0f4784fa8360",
+            "source_hash": "67eca5a89a7c60cccbde6f579166ed1ff9905958b9e1a1a9d5c0560f937470ea",
+            "config_hash": "2847180880933d1e2da3428505fd336d7e7791dfc759b54528703299165e94a8",
+            "observed_at": "2026-10-24T15:20:12.886Z"
+          }
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-24T15:11:49.927Z",
+      "updated_at": "2026-10-24T15:20:21.325Z",
+      "base_manifest": {
+        "AGENTS.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "CLAUDE.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "SPEC.md": "a676d1705ca904ebfe7d8b35659483c2cf86e44e91a2320ee947e91f5669974a",
+        "WEB_AGENT_SECURITY_PROBLEMS_AND_SOLUTIONS.md": "b16adfeb00da2385bde434ab632ce4c328ae3bcb4b2594c0d289f91ce02d097e",
+        "architecture.html": "f6f6a265fec440e034874673fd0ba7017cf8ce7ec2b7408a053663127190d7c1"
+      }
+    },
+    {
+      "id": "TASK-2",
+      "outcome": "Implement Playwright browser wrapper, CDP network route interceptor, and approval callbacks",
+      "state": "done",
+      "risk": "low",
+      "owner": null,
+      "scope": [
+        "gashi",
+        "tests"
+      ],
+      "dependencies": [
+        "TASK-1"
+      ],
+      "requirements": [
+        "FR-5",
+        "NFR-2",
+        "AC-1"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [],
+      "gates": [
+        {
+          "id": "wrapper-tests",
+          "kind": "command",
+          "command": "pytest tests/test_wrapper.py",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/TASK-2-wrapper-tests-bd18d413-2dc3-4f14-996c-e1579a3b2bd7.json",
+            "hash": "9b0ea6df27c2e0769dde7844f3ab26908b88cf802a6062d6e7edae1c660eba9d",
+            "source_hash": "346cd36448b0b3003f968e500e1aaee7e4b5bb85480eaf9812adc692ed852831",
+            "config_hash": "50c9e09e8bd262ae7eee1dc8fc440217c586bb0f4f49b1c934e0d9ac9407c8b3",
+            "observed_at": "2026-10-24T15:23:35.992Z"
+          }
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-24T15:11:57.485Z",
+      "updated_at": "2026-10-24T15:23:44.761Z",
+      "base_manifest": {
+        ".gitignore": "6b955d1e8b8b59e072f30e641413da7640a6ff82480842954ea5dbc3f3dfa368",
+        "AGENTS.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "CLAUDE.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "SPEC.md": "a676d1705ca904ebfe7d8b35659483c2cf86e44e91a2320ee947e91f5669974a",
+        "WEB_AGENT_SECURITY_PROBLEMS_AND_SOLUTIONS.md": "b16adfeb00da2385bde434ab632ce4c328ae3bcb4b2594c0d289f91ce02d097e",
+        "architecture.html": "f6f6a265fec440e034874673fd0ba7017cf8ce7ec2b7408a053663127190d7c1",
+        "conftest.py": "e1135e5aaac37e43c8f314fa95794a3fd7be85bab39f90ff7753d8b1177be5fa",
+        "gashi/__init__.py": "1222c0a1dbf579240281a9698b13b8c5ba5d952333e9291244a0e3d805f2f104",
+        "gashi/config.py": "dfff52aea096ed9aa1343d1dd77e895311af0d12827c9b09d81c8205a685f895",
+        "gashi/egress.py": "3216c88768ec6423a63c58b60981db08e49a2a3e12baeaacdb1a6b70e815ecd4",
+        "gashi/ingress.py": "5882ef4f46a823f9aed6a093db67f2509081951990ad1c4479067dc611e50767",
+        "requirements.txt": "ba8dd5da5b61d9606e8cde4e21aa7b70e9e97baa2cc8e4ee02ca3e964d22be2e",
+        "tests/test_unit_security.py": "a16b9bb3a13f96ca99ad3a08340998e22d632ae3845d78bd104720e26fcef082"
+      }
+    },
+    {
+      "id": "TASK-3",
+      "outcome": "Implement synthetic testbed, dual-run red-team benchmark suite, and SSE reporting",
+      "state": "done",
+      "risk": "low",
+      "owner": null,
+      "scope": [
+        "testbed",
+        "tests"
+      ],
+      "dependencies": [
+        "TASK-2"
+      ],
+      "requirements": [
+        "FR-6",
+        "FR-7",
+        "NFR-3",
+        "NFR-4",
+        "AC-2",
+        "AC-3"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [],
+      "gates": [
+        {
+          "id": "redteam-tests",
+          "kind": "command",
+          "command": "pytest tests/test_redteam.py",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/TASK-3-redteam-tests-cf7e2308-aa89-4c2c-88ce-a6daf0df265f.json",
+            "hash": "b753e8ce5338631afaf92178ee4ffe89e8a46f6daa87425289765eba8951519a",
+            "source_hash": "a570a171a1f47d6acbc2e655fcfba29a40b1853cc40b8109795f5c4c39f6d154",
+            "config_hash": "2978b7a64aac923216764bbadaec142254752b027d863863902b9f4db3a4ab7d",
+            "observed_at": "2026-10-24T15:25:02.369Z"
+          }
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-24T15:12:09.640Z",
+      "updated_at": "2026-10-24T15:25:09.833Z",
+      "base_manifest": {
+        ".gitignore": "6b955d1e8b8b59e072f30e641413da7640a6ff82480842954ea5dbc3f3dfa368",
+        "AGENTS.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "CLAUDE.md": "a67615d8ed1ed3dd1b0d2cbf874ceb8d4a285c3335cdfc2d785ec80a06daecc1",
+        "SPEC.md": "a676d1705ca904ebfe7d8b35659483c2cf86e44e91a2320ee947e91f5669974a",
+        "WEB_AGENT_SECURITY_PROBLEMS_AND_SOLUTIONS.md": "b16adfeb00da2385bde434ab632ce4c328ae3bcb4b2594c0d289f91ce02d097e",
+        "architecture.html": "f6f6a265fec440e034874673fd0ba7017cf8ce7ec2b7408a053663127190d7c1",
+        "conftest.py": "e1135e5aaac37e43c8f314fa95794a3fd7be85bab39f90ff7753d8b1177be5fa",
+        "gashi/__init__.py": "e2c412983f52ef4c5edb81355e4a59cef162ce74f3065e94ae935ef7a917a1c7",
+        "gashi/config.py": "dfff52aea096ed9aa1343d1dd77e895311af0d12827c9b09d81c8205a685f895",
+        "gashi/egress.py": "3216c88768ec6423a63c58b60981db08e49a2a3e12baeaacdb1a6b70e815ecd4",
+        "gashi/ingress.py": "5882ef4f46a823f9aed6a093db67f2509081951990ad1c4479067dc611e50767",
+        "gashi/network.py": "88caabddc34fa51ecab442fd2f5142c463b187a6285d488d8d00b4877b27e515",
+        "gashi/wrapper.py": "39c41ba8d72fe0a6137d5b21f237808ab5593f25f15498071b0c99f263f491e6",
+        "requirements.txt": "ba8dd5da5b61d9606e8cde4e21aa7b70e9e97baa2cc8e4ee02ca3e964d22be2e",
+        "tests/test_unit_security.py": "a16b9bb3a13f96ca99ad3a08340998e22d632ae3845d78bd104720e26fcef082",
+        "tests/test_wrapper.py": "5e35c5927b80cfbe1b15727117830d8c244d8deb7f6b4a46de48290e6df5f801"
+      }
+    }
+  ],
+  "learning_proposals": [],
+  "cleanup_proposals": [],
+  "controls": [
+    {
+      "id": "702a7026-3c38-4b64-8391-cbc784bcb0f7",
+      "at": "2026-10-24T15:20:01.013Z",
+      "action": "resume",
+      "task": "TASK-1",
+      "human": null,
+      "reason": null,
+      "revision": null
+    }
+  ],
+  "attempts": [
+    {
+      "id": "597d1a4c-1604-44e6-a263-ab59026b29b5",
+      "task": "TASK-1",
+      "kind": "gate",
+      "command": "pytest tests/test_unit_security.py",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 8272,
+      "child_pid": 27316,
+      "started_at": "2026-10-24T15:17:04.435Z",
+      "status": "failed",
+      "before_hash": "0c79398f463825ec5edba99ff94c07a4facb151fdfcda11682db1de0b9f8f2e9",
+      "config_hash": "1ea7cb37bb75b8633eacdc40b82f03a7e53e9ef4fe1a00c465ebf3225f83affe",
+      "environment": {
+        "node": "v24.14.0",
+        "platform": "win32",
+        "arch": "x64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": "command-failed",
+      "ended_at": "2026-10-24T15:17:10.484Z"
+    },
+    {
+      "id": "a4cf30fb-c081-4707-94b2-1d2b5bbafeee",
+      "task": "TASK-1",
+      "kind": "gate",
+      "command": "pytest tests/test_unit_security.py",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 5116,
+      "child_pid": 4440,
+      "started_at": "2026-10-24T15:18:06.740Z",
+      "status": "passed",
+      "before_hash": "40755377c15e7c688fe72c5ae3d8f67a5cffc20997e65a926404cd6d0a06190e",
+      "config_hash": "1ea7cb37bb75b8633eacdc40b82f03a7e53e9ef4fe1a00c465ebf3225f83affe",
+      "environment": {
+        "node": "v24.14.0",
+        "platform": "win32",
+        "arch": "x64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-24T15:18:12.479Z"
+    },
+    {
+      "id": "b5a3ec72-0905-47b5-98c7-7b1d26b8153e",
+      "task": "TASK-1",
+      "kind": "gate",
+      "command": "pytest tests/test_unit_security.py",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 16480,
+      "child_pid": 18340,
+      "started_at": "2026-10-24T15:20:06.796Z",
+      "status": "passed",
+      "before_hash": "67eca5a89a7c60cccbde6f579166ed1ff9905958b9e1a1a9d5c0560f937470ea",
+      "config_hash": "2847180880933d1e2da3428505fd336d7e7791dfc759b54528703299165e94a8",
+      "environment": {
+        "node": "v24.14.0",
+        "platform": "win32",
+        "arch": "x64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-24T15:20:12.886Z"
+    },
+    {
+      "id": "bd18d413-2dc3-4f14-996c-e1579a3b2bd7",
+      "task": "TASK-2",
+      "kind": "gate",
+      "command": "pytest tests/test_wrapper.py",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 22612,
+      "child_pid": 17548,
+      "started_at": "2026-10-24T15:23:30.303Z",
+      "status": "passed",
+      "before_hash": "346cd36448b0b3003f968e500e1aaee7e4b5bb85480eaf9812adc692ed852831",
+      "config_hash": "50c9e09e8bd262ae7eee1dc8fc440217c586bb0f4f49b1c934e0d9ac9407c8b3",
+      "environment": {
+        "node": "v24.14.0",
+        "platform": "win32",
+        "arch": "x64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-24T15:23:35.992Z"
+    },
+    {
+      "id": "cf7e2308-aa89-4c2c-88ce-a6daf0df265f",
+      "task": "TASK-3",
+      "kind": "gate",
+      "command": "pytest tests/test_redteam.py",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 12416,
+      "child_pid": 7576,
+      "started_at": "2026-10-24T15:24:55.830Z",
+      "status": "passed",
+      "before_hash": "a570a171a1f47d6acbc2e655fcfba29a40b1853cc40b8109795f5c4c39f6d154",
+      "config_hash": "2978b7a64aac923216764bbadaec142254752b027d863863902b9f4db3a4ab7d",
+      "environment": {
+        "node": "v24.14.0",
+        "platform": "win32",
+        "arch": "x64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-24T15:25:02.369Z"
+    }
+  ],
+  "authorizations": [],
+  "experiments": [],
+  "incidents": [],
+  "discovery": null,
+  "checkpoint": {
+    "at": "2026-10-24T15:25:37.460Z",
+    "revision": {
+      "commit": null,
+      "dirty": null,
+      "source_hash": "a570a171a1f47d6acbc2e655fcfba29a40b1853cc40b8109795f5c4c39f6d154"
+    },
+    "active_task": null,
+    "next_action": "Review completed work and choose the next bounded outcome."
+  },
+  "legacy": null
+}

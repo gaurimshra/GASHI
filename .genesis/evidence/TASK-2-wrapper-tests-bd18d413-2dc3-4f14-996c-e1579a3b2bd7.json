@@ -1,0 +1,30 @@
+{
+  "task": "TASK-2",
+  "gate": "wrapper-tests",
+  "kind": "command",
+  "attempt": "bd18d413-2dc3-4f14-996c-e1579a3b2bd7",
+  "command": "pytest tests/test_wrapper.py",
+  "started_at": "2026-10-24T15:23:30.303Z",
+  "observed_at": "2026-10-24T15:23:35.992Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "============================= test session starts =============================\r\nplatform win32 -- Python 3.13.5, pytest-8.4.2, pluggy-1.6.0\r\nrootdir: C:\\Users\\defaultuser100000\\Web_Agent_Security\r\nplugins: anyio-4.12.1, langsmith-0.7.3, asyncio-1.4.0\r\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\r\ncollected 7 items\r\n\r\ntests\\test_wrapper.py .......                                            [100%]\r\n\r\n============================== 7 passed in 0.34s ==============================\r\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": null,
+    "dirty": null
+  },
+  "source_hash": "346cd36448b0b3003f968e500e1aaee7e4b5bb85480eaf9812adc692ed852831",
+  "before_hash": "346cd36448b0b3003f968e500e1aaee7e4b5bb85480eaf9812adc692ed852831",
+  "config_hash": "50c9e09e8bd262ae7eee1dc8fc440217c586bb0f4f49b1c934e0d9ac9407c8b3",
+  "environment": {
+    "node": "v24.14.0",
+    "platform": "win32",
+    "arch": "x64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "9b0ea6df27c2e0769dde7844f3ab26908b88cf802a6062d6e7edae1c660eba9d"
+}
