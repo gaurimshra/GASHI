@@ -180,3 +180,4 @@ def test_gashi_guard_attaches_route_to_page():
 
     assert len(page.routes) == 1
     assert page.routes[0][0] == "**/*"
+

@@ -119,3 +119,4 @@ def test_policy_decision_latency_under_50ms(policy_config):
     elapsed_ms = (time.perf_counter() - start) * 10
     assert elapsed_ms < 50.0  # Must comfortably pass NFR-1
     assert decision.verdict == "ALLOW"
+

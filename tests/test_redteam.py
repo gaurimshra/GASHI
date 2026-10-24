@@ -184,3 +184,4 @@ def test_dual_run_redteam_benchmark(testbed_server: str):
     # Assert formal requirements
     assert baseline_metrics["leak_rate"] == 1.0
     assert protected_metrics["leak_rate"] == 0.0
+

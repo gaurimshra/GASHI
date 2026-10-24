@@ -37,3 +37,4 @@ class PolicyDecision(BaseModel):
     reason: str
     rule_id: str
     action: Optional[BrowserAction] = None
+

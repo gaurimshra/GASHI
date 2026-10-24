@@ -205,3 +205,4 @@ class MockServerManager:
             self.server.shutdown()
             self.server.server_close()
             self.server = None
+

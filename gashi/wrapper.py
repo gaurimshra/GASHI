@@ -153,3 +153,4 @@ class GashiGuard:
         """One-line convenience method to wrap any Playwright page."""
         guard = cls(config=config, approval_callback=approval_callback)
         return guard.wrap(page)
+

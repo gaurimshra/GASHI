@@ -113,3 +113,4 @@ class NetworkRouteGuard:
         """Attach route handler to a Playwright page instance."""
         if hasattr(page, "route"):
             page.route("**/*", self.intercept_route)
+

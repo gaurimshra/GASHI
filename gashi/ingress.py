@@ -71,3 +71,4 @@ class DOMSanitizer:
 
         # 5. Encapsulate within strict untrusted boundary tags
         return f'<untrusted_web_content integrity="tainted" source="{source_url}">\n{clean_text}\n</untrusted_web_content>'
+
