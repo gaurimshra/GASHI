@@ -90,3 +90,4 @@ def test_real_chromium_prompt_injection_defense(live_server: str):
 
         real_page.close()
         browser.close()
+

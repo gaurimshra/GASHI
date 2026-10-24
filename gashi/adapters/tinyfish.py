@@ -74,3 +74,4 @@ def validate_tinyfish_agent_request(
             raise SecurityPolicyViolation(
                 f"[GASHI-BLOCKED] TinyFish agent target URL '{hostname}' is not in allowed domains."
             )
+

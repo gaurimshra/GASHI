@@ -133,3 +133,4 @@ def test_tinyfish_agent_request_validation():
             config=config
         )
     assert "is not in allowed domains" in str(exc_info.value)
+
