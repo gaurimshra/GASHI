@@ -10,3 +10,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+venv/
+.venv/
+test_env/
+env/
