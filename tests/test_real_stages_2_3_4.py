@@ -155,3 +155,4 @@ def test_stage_4_network_route_guard_aborts_dynamic_image_exfiltration(test_serv
 
         guarded_page.close()
         browser.close()
+
