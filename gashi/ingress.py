@@ -45,9 +45,17 @@ class DOMSanitizer:
             tag.decompose()
 
         # 3. Strip nodes with hidden CSS styles or utility classes
-        for el in soup.find_all(True):
-            style = el.get('style', '')
-            class_list = el.get('class', [])
+        for el in list(soup.find_all(True)):
+            # If element was already decomposed or has no attributes, skip
+            if getattr(el, 'attrs', None) is None:
+                continue
+
+            style = el.attrs.get('style', '') or ''
+            if isinstance(style, list):
+                style = " ".join(style)
+            style = str(style)
+
+            class_list = el.attrs.get('class', []) or []
             class_str = " ".join(class_list).lower() if isinstance(class_list, list) else str(class_list).lower()
 
             # Check inline CSS steganography
@@ -61,10 +69,13 @@ class DOMSanitizer:
                 continue
 
             # Clean zero-width Unicode characters from strings
-            if el.string:
-                cleaned_string = cls.ZERO_WIDTH_CHARS.sub('', el.string)
-                if cleaned_string != el.string:
-                    el.string.replace_with(cleaned_string)
+            if getattr(el, 'string', None):
+                try:
+                    cleaned_string = cls.ZERO_WIDTH_CHARS.sub('', str(el.string))
+                    if cleaned_string != el.string:
+                        el.string.replace_with(cleaned_string)
+                except Exception:
+                    pass
 
         # 4. Extract human-visible text
         clean_text = soup.get_text(separator=" ", strip=True)
