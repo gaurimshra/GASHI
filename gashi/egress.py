@@ -25,6 +25,17 @@ class ActionPolicyEngine:
         selector = str(action_obj.selector or "").lower()
 
         # -------------------------------------------------------------
+        # CHECK 0: Read-Only Mode (Blocks form mutations & typing)
+        # -------------------------------------------------------------
+        if config.read_only and action_type in ("type", "fill", "submit"):
+            return PolicyDecision(
+                verdict="BLOCK",
+                reason=f"READ-ONLY RESTRICTION: Action '{action_type}' is prohibited in read-only mode.",
+                rule_id="RULE-EGRESS-04-READONLY",
+                action=action_obj
+            )
+
+        # -------------------------------------------------------------
         # CHECK 1: Canary Token Leak Check (Data Exfiltration Prevention)
         # -------------------------------------------------------------
         for secret in config.canary_secrets:
@@ -46,7 +57,7 @@ class ActionPolicyEngine:
             parsed = urlparse(target_url)
             hostname = (parsed.hostname or "").lower()
 
-            is_allowed = any(
+            is_allowed = "*" in config.allowed_domains or any(
                 hostname == d.lower() or hostname.endswith("." + d.lower())
                 for d in config.allowed_domains
             )

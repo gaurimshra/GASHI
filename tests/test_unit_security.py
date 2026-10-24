@@ -120,3 +120,29 @@ def test_policy_decision_latency_under_50ms(policy_config):
     assert elapsed_ms < 50.0  # Must comfortably pass NFR-1
     assert decision.verdict == "ALLOW"
 
+def test_read_only_mode_blocks_type_and_fill():
+    ro_config = PolicyConfig(
+        allowed_domains=["*"],
+        read_only=True
+    )
+    # Type should be blocked
+    type_action = BrowserAction(action_type="type", selector="input#search", value="hello")
+    decision = ActionPolicyEngine.evaluate(type_action, ro_config)
+    assert decision.verdict == "BLOCK"
+    assert decision.rule_id == "RULE-EGRESS-04-READONLY"
+
+    # Fill should be blocked
+    fill_action = BrowserAction(action_type="fill", selector="input#search", value="hello")
+    decision2 = ActionPolicyEngine.evaluate(fill_action, ro_config)
+    assert decision2.verdict == "BLOCK"
+    assert decision2.rule_id == "RULE-EGRESS-04-READONLY"
+
+def test_read_only_mode_allows_navigation():
+    ro_config = PolicyConfig(
+        allowed_domains=["*"],
+        read_only=True
+    )
+    nav_action = BrowserAction(action_type="navigate", target_url="https://news.ycombinator.com")
+    decision = ActionPolicyEngine.evaluate(nav_action, ro_config)
+    assert decision.verdict == "ALLOW"
+

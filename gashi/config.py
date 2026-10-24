@@ -15,6 +15,10 @@ class PolicyConfig(BaseModel):
         default_factory=list,
         description="Secondary trusted domains allowed for static assets (fonts, stylesheets, CDNs)."
     )
+    read_only: bool = Field(
+        default=False,
+        description="When true, enforces strict read-only mode: blocks all typing, form filling, submits, and outbound POST mutations."
+    )
     mode: Literal["strict", "audit"] = Field(
         default="strict",
         description="Strict mode blocks violations; audit mode allows and logs."
@@ -24,7 +28,7 @@ class BrowserAction(BaseModel):
     """
     Structured action proposal emitted by the agent reasoning loop.
     """
-    action_type: Literal["navigate", "click", "type", "scroll", "submit"]
+    action_type: Literal["navigate", "click", "type", "fill", "scroll", "submit"]
     selector: Optional[str] = None
     value: Optional[str] = None
     target_url: Optional[str] = None

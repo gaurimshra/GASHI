@@ -56,7 +56,7 @@ class NetworkRouteGuard:
                 return PolicyDecision(verdict="ALLOW", reason="Local URI allowed", rule_id="RULE-NET-00-LOCAL")
 
             all_allowed = self.config.allowed_domains + self.config.allowed_asset_hosts
-            domain_matched = any(
+            domain_matched = "*" in all_allowed or any(
                 hostname == allowed.lower() or hostname.endswith("." + allowed.lower())
                 for allowed in all_allowed
             )
@@ -73,6 +73,7 @@ class NetworkRouteGuard:
         """Playwright-compatible route handler: page.route('**/*', guard.intercept_route)."""
         request = getattr(route, "request", None)
         url = request.url if request and hasattr(request, "url") else getattr(route, "url", "")
+        method = (getattr(request, "method", "GET") or "GET").upper() if request else "GET"
         post_data = None
         if request and hasattr(request, "post_data"):
             try:
@@ -80,7 +81,15 @@ class NetworkRouteGuard:
             except Exception:
                 post_data = None
 
-        decision = self.check_url_and_body(url, post_data)
+        # Check Read-Only Mode (blocks mutation requests: POST, PUT, DELETE, PATCH)
+        if self.config.read_only and method in ("POST", "PUT", "DELETE", "PATCH"):
+            decision = PolicyDecision(
+                verdict="BLOCK",
+                reason=f"READ-ONLY RESTRICTION: Outbound HTTP {method} mutation request blocked.",
+                rule_id="RULE-NET-04-READONLY"
+            )
+        else:
+            decision = self.check_url_and_body(url, post_data)
         event = {
             "url": url,
             "verdict": decision.verdict,
