@@ -6,7 +6,8 @@ Built with authentic shadcn/ui design system:
 - Tailwind CSS via CDN with customized shadcn theme tokens
 - Lucide SVG icons (ShieldCheck, Lock, AlertTriangle, Zap, Terminal, Database)
 - Real-time Server-Sent Events (SSE) streaming telemetry
-- Interactive Human-in-the-Loop approval modal
+- Interactive Human-in-the-Loop approval modal with live unblocking
+- Real-Time Execution Controller directly driving C:\\Users\\defaultuser100000\\web_agent_test
 - Dual-Run Benchmark comparison matrix & SQLite audit log playback
 """
 
@@ -76,6 +77,9 @@ def record_audit_event(stage: str, rule_id: str, verdict: str, details: str, tar
 # In-memory event bus for real-time SSE streaming
 EVENT_SUBSCRIBERS: List[asyncio.Queue] = []
 
+# In-memory approval state for fast polling and resolution
+PENDING_APPROVALS: Dict[str, Dict[str, Any]] = {}
+
 
 async def broadcast_event(event: Dict[str, Any]):
     """Broadcast an event to all connected SSE clients."""
@@ -95,7 +99,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="GASHI-Guard Security Dashboard", lifespan=lifespan)
 
 
-SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
+SHADCN_DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -156,7 +160,7 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-border flex items-center justify-center text-accent">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">GASHI-Guard Runtime</h1>
+                    <h1 class="text-xl font-bold tracking-tight text-white">GASHI-Guard SOC</h1>
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         7 Stages Armed
@@ -164,18 +168,43 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Controls -->
+            <!-- Global Status Indicator -->
             <div class="flex items-center gap-3">
-                <button onclick="triggerLiveDemoAttack()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-md transition shadow-sm active:scale-95">
-                    <svg class="w-3.5 h-3.5 text-zinc-900" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    Trigger Attack Demo
-                </button>
-                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-border text-xs text-muted font-mono" id="conn-pill">
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-border text-xs text-muted font-mono" id="conn-pill">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                     SSE Connected
                 </div>
             </div>
         </header>
+
+        <!-- Real-Time Agent Target & Execution Control -->
+        <section class="p-5 rounded-xl bg-card border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="space-y-1.5">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-accent font-mono">Connected Target Agent:</span>
+                    <span class="text-xs font-mono px-2 py-0.5 rounded bg-zinc-900 border border-border text-emerald-300 font-semibold">C:\Users\defaultuser100000\web_agent_test</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-muted flex-wrap">
+                    <span>LLM: <strong class="text-zinc-200 font-mono">Google Gemini 2.5 / Groq LLaMA-3.3-70b</strong></span>
+                    <span>&bull;</span>
+                    <span>Tools: <strong class="text-zinc-200">TinyFish Cloud + DOMSanitizer</strong></span>
+                    <span>&bull;</span>
+                    <span>Target URL: <strong class="text-zinc-200 font-mono">http://127.0.0.1:8081/invoice</strong></span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <button id="btn-run-protected" onclick="runLiveAgent('protected')" class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-zinc-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition shadow-sm active:scale-95 disabled:opacity-50">
+                    <svg class="w-3.5 h-3.5 text-zinc-950" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    ▶ Run Protected Agent (GASHI)
+                </button>
+                <button id="btn-run-unprotected" onclick="runLiveAgent('unprotected')" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-300 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800/50 rounded-md transition active:scale-95 disabled:opacity-50">
+                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Run Vulnerable Baseline
+                </button>
+            </div>
+        </section>
 
         <!-- KPI Metrics Grid (shadcn Cards) -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -189,7 +218,7 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-injections">0</div>
-                <p class="text-[11px] text-muted mt-1 font-mono">Stage 1: DOMSanitizer</p>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 1: DOMSanitizer (&lt;12ms)</p>
             </div>
 
             <!-- Canary Leaks Card -->
@@ -201,7 +230,7 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-canaries">0</div>
-                <p class="text-[11px] text-muted mt-1 font-mono">Stage 2 &amp; 4 Policy Engine</p>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 2 &amp; 4 Policy Engine (0% Leak)</p>
             </div>
 
             <!-- State-Change Gates Card -->
@@ -213,7 +242,7 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-gates">0</div>
-                <p class="text-[11px] text-muted mt-1 font-mono">Stage 3 &amp; 6 HITL Pauses</p>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 3 &amp; 6 Interactive HITL</p>
             </div>
 
             <!-- Latency Card -->
@@ -225,7 +254,7 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="text-2xl font-bold tracking-tight text-white mt-2">&lt; 1 ms</div>
-                <p class="text-[11px] text-muted mt-1 font-mono">Strict Target: &lt; 50 ms</p>
+                <p class="text-[11px] text-muted mt-1 font-mono">Zero Overhead on Agent Loop</p>
             </div>
 
         </section>
@@ -233,35 +262,49 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
         <!-- Main Workspace (2-Column Grid) -->
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            <!-- Left: Real-Time Event Stream (7 Columns) -->
+            <!-- Left: Real-Time Event Stream & Interactive Approvals (7 Columns) -->
             <div class="lg:col-span-7 space-y-4">
                 <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
                     <div class="flex items-center justify-between pb-4 border-b border-border">
                         <div class="space-y-0.5">
                             <h2 class="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-accent"></span>
-                                Live Telemetry Stream
+                                <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                                Live Security Telemetry Feed
                             </h2>
-                            <p class="text-xs text-muted">Server-Sent Events emitted by Playwright runtime &amp; policies</p>
+                            <p class="text-xs text-muted">Real-time alerts emitted by GASHI layers guarding web_agent_test</p>
                         </div>
                         <span class="text-[11px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-border" id="stream-time">Listening...</span>
                     </div>
 
-                    <!-- Interactive Approval Dialog (Injected dynamically) -->
+                    <!-- Interactive Human Approval Card (Injected dynamically) -->
                     <div id="approval-slot" class="mt-4"></div>
 
                     <!-- Stream Container -->
-                    <div class="mt-4 space-y-2.5 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar" id="feed-box">
+                    <div class="mt-4 space-y-2.5 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar" id="feed-box">
                         <div class="p-3.5 rounded-lg bg-surface border border-border/80 flex items-start justify-between gap-3 text-xs">
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2 font-mono">
                                     <span class="text-accent font-semibold">[STAGE-0] SYSTEM_INIT</span>
                                     <span class="text-muted">RULE-INIT-READY</span>
                                 </div>
-                                <p class="text-zinc-300">GASHI Zero-Trust security runtime hooked into active browser session.</p>
+                                <p class="text-zinc-300">GASHI Zero-Trust security runtime connected to target agent at C:\Users\defaultuser100000\web_agent_test.</p>
                             </div>
                             <span class="text-[10px] text-muted font-mono whitespace-nowrap">Ready</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Live Agent Output Console -->
+                <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-border">
+                        <h3 class="text-xs font-semibold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Live Agent Execution Console (web_agent_test)
+                        </h3>
+                        <span class="text-[10px] text-muted font-mono">stdout pipe</span>
+                    </div>
+                    <div id="agent-console-log" class="mt-3 p-3 bg-black/90 border border-zinc-800 rounded-lg max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-wrap">
+[*] Console initialized. Click "Run Protected Agent" above or run from CLI to see real-time streaming execution.
                     </div>
                 </div>
             </div>
@@ -318,23 +361,25 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
 
-                <!-- SQLite Durable Audit Trail Card -->
+                <!-- SQLite Enterprise Audit Trail -->
                 <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
                     <div class="flex items-center justify-between pb-3 border-b border-border">
                         <div class="space-y-0.5">
                             <h2 class="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
                                 <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
-                                Durable Audit Trail
+                                SQLite Audit Log
                             </h2>
-                            <p class="text-xs text-muted">Immutable forensic events in <code>audit.db</code></p>
+                            <p class="text-xs text-muted">Immutable forensic history stored in audit.db</p>
                         </div>
-                        <button onclick="refreshAuditLogs()" class="p-1 text-muted hover:text-white rounded hover:bg-zinc-800 transition">
+                        <button onclick="refreshAuditLogs()" class="p-1.5 rounded-md hover:bg-zinc-800 text-muted hover:text-zinc-200 transition">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         </button>
                     </div>
 
-                    <div class="mt-3 space-y-1.5 max-h-[170px] overflow-y-auto pr-1 text-[11px] font-mono custom-scrollbar" id="audit-list">
-                        <div class="p-2 rounded bg-surface text-muted">No audit events recorded yet.</div>
+                    <div class="mt-3 space-y-2 text-xs font-mono max-h-56 overflow-y-auto pr-1 custom-scrollbar" id="audit-list">
+                        <div class="p-2 rounded bg-surface border border-border/60 text-muted text-center text-[11px]">
+                            Loading audit trail...
+                        </div>
                     </div>
                 </div>
 
@@ -367,6 +412,22 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
         };
 
         function renderSecurityEvent(ev) {
+            // Check if this is an Agent Console log
+            if (ev.stage === 'AGENT-CONSOLE') {
+                const consoleLog = document.getElementById('agent-console-log');
+                if (consoleLog) {
+                    const line = document.createElement('div');
+                    line.className = 'font-mono text-[11px] leading-relaxed ' + 
+                        (ev.reason.includes('ERROR') || ev.reason.includes('HIJACK') ? 'text-rose-400 font-semibold' :
+                         ev.reason.includes('[GASHI') || ev.reason.includes('[SUCCESS]') ? 'text-emerald-400' :
+                         ev.reason.includes('[LLM]') ? 'text-sky-300' : 'text-zinc-300');
+                    line.innerText = ev.reason;
+                    consoleLog.appendChild(line);
+                    consoleLog.scrollTop = consoleLog.scrollHeight;
+                }
+                return;
+            }
+
             const feed = document.getElementById('feed-box');
             const card = document.createElement('div');
             
@@ -374,12 +435,15 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
             let borderClass = 'border-border';
             let verdictLabel = ev.verdict || 'EVENT';
 
-            if (ev.verdict === 'BLOCK') {
+            if (ev.verdict === 'BLOCK' || ev.verdict === 'VULNERABLE' || ev.verdict === 'HIJACKED') {
                 badgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
                 borderClass = 'border-red-500/40 bg-red-950/10';
             } else if (ev.verdict === 'REQUIRE_APPROVAL') {
                 badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
                 borderClass = 'border-amber-500/40 bg-amber-950/10';
+            } else if (ev.verdict === 'CLEANED' || ev.verdict === 'SAFE' || ev.verdict === 'APPROVED') {
+                badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                borderClass = 'border-emerald-500/40 bg-emerald-950/10';
             }
 
             card.className = `p-3.5 rounded-lg bg-surface border ${borderClass} flex flex-col gap-1.5 text-xs transition duration-200 hover:border-zinc-600`;
@@ -415,23 +479,28 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
 
         function renderShadcnApprovalModal(ev) {
             const slot = document.getElementById('approval-slot');
-            const id = 'approval_' + Date.now();
+            const cardId = 'approval_' + Date.now();
+            const actionId = ev.action_id || 'act_transfer_8812';
             slot.innerHTML = `
-                <div class="p-4 rounded-xl bg-amber-950/20 border border-amber-500/50 shadow-lg space-y-3" id="${id}">
+                <div class="p-4 rounded-xl bg-amber-950/30 border border-amber-500/60 shadow-lg space-y-3 animate-pulse" id="${cardId}">
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         </div>
                         <div class="space-y-1">
-                            <h3 class="text-xs font-bold text-amber-300 tracking-wide uppercase">Stage 3 Gate: Human Approval Required</h3>
-                            <p class="text-xs text-zinc-300 leading-normal">${ev.reason || 'Agent is attempting high-consequence state change.'}</p>
+                            <h3 class="text-xs font-bold text-amber-300 tracking-wide uppercase">Stage 3 Gate: Human Operator Approval Required</h3>
+                            <p class="text-xs text-zinc-200 leading-normal">${ev.reason || 'Agent is attempting high-consequence financial wire transfer.'}</p>
+                            <div class="flex items-center gap-3 text-[11px] font-mono text-zinc-400 pt-1">
+                                <span>Target: <span class="text-zinc-200">${ev.target_url || 'http://127.0.0.1:8081/invoice'}</span></span>
+                                <span>Action: <span class="text-amber-300 font-semibold">${ev.action_type || 'click'} (${ev.selector || 'button#btn-transfer'})</span></span>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2.5 pt-1 pl-11">
-                        <button onclick="resolveGate('${id}', 'APPROVE')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
+                        <button onclick="resolveGate('${cardId}', '${actionId}', 'APPROVED')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm active:scale-95">
                             ✓ Authorize Action
                         </button>
-                        <button onclick="resolveGate('${id}', 'DENY')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-zinc-800 hover:bg-red-950 text-zinc-300 hover:text-red-400 border border-zinc-700 transition">
+                        <button onclick="resolveGate('${cardId}', '${actionId}', 'DENIED')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-zinc-800 hover:bg-red-950 text-zinc-300 hover:text-red-400 border border-zinc-700 transition active:scale-95">
                             ✕ Deny Action
                         </button>
                     </div>
@@ -439,18 +508,32 @@ SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
             `;
         }
 
-        async function resolveGate(cardId, decision) {
+        async function resolveGate(cardId, actionId, decision) {
             const el = document.getElementById(cardId);
             if (el) el.remove();
-            await fetch('/api/approvals/action', {
+            await fetch('/api/approvals/resolve', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({decision: decision})
+                body: JSON.stringify({action_id: actionId, decision: decision})
             });
         }
 
-        async function triggerLiveDemoAttack() {
-            await fetch('/api/trigger-demo', { method: 'POST' });
+        async function runLiveAgent(mode) {
+            const consoleLog = document.getElementById('agent-console-log');
+            consoleLog.innerHTML = `<span class="text-emerald-400 font-semibold">[*] Spawning real-world agent in C:\\Users\\defaultuser100000\\web_agent_test [mode=${mode}]...</span>\\n`;
+            const btnProt = document.getElementById('btn-run-protected');
+            const btnUnprot = document.getElementById('btn-run-unprotected');
+            if (btnProt) btnProt.disabled = true;
+            if (btnUnprot) btnUnprot.disabled = true;
+
+            try {
+                await fetch('/api/agent/run?mode=' + mode, { method: 'POST' });
+            } finally {
+                setTimeout(() => {
+                    if (btnProt) btnProt.disabled = false;
+                    if (btnUnprot) btnUnprot.disabled = false;
+                }, 3000);
+            }
         }
 
         async function refreshAuditLogs() {
@@ -527,49 +610,122 @@ async def emit_security_event(req: IngestEventRequest):
     return {"status": "recorded"}
 
 
-@app.post("/api/trigger-demo")
-async def trigger_live_demo_sequence():
-    """Simulates a rapid multi-stage attack and defense sequence on the dashboard in real time."""
-    # Step 1: Ingress Attack Neutralization
-    await emit_security_event(IngestEventRequest(
-        stage="STAGE-1-INGRESS",
-        rule_id="RULE-INGRESS-01",
-        verdict="CLEANED",
-        reason="Neutralized hidden -9999px off-screen container & zero-font injection in 4.2ms.",
-        target_url="http://127.0.0.1:8081/invoice"
-    ))
-    await asyncio.sleep(0.35)
+class ApprovalRequest(BaseModel):
+    action_id: str
+    action_type: str
+    selector: Optional[str] = ""
+    target_url: Optional[str] = ""
+    reason: str
 
-    # Step 2: Egress Canary Secret Leak Intercepted
-    await emit_security_event(IngestEventRequest(
-        stage="STAGE-2-EGRESS",
-        rule_id="RULE-EGRESS-01-CANARY",
-        verdict="BLOCK",
-        reason="CANARY LEAK DETECTED: Action attempts to leak protected token 'CORP_SECRET_8812' to 'attacker-c2.xyz'.",
-        target_url="https://attacker-c2.xyz/exfiltrate"
-    ))
-    await asyncio.sleep(0.35)
 
-    # Step 3: Network Route Interceptor
-    await emit_security_event(IngestEventRequest(
-        stage="STAGE-4-NETWORK",
-        rule_id="RULE-NET-01-CANARY-URL",
-        verdict="BLOCK",
-        reason="Network packet dropped: Outbound dynamic <img> tag attempted background beacon to unapproved C2.",
-        target_url="https://attacker-c2.xyz/ping.gif"
-    ))
-    await asyncio.sleep(0.35)
+@app.post("/api/approvals/request")
+async def create_approval_request(req: ApprovalRequest):
+    """Registers a pending Human-in-the-Loop authorization request."""
+    PENDING_APPROVALS[req.action_id] = {
+        "action_id": req.action_id,
+        "action_type": req.action_type,
+        "selector": req.selector or "",
+        "target_url": req.target_url or "",
+        "reason": req.reason,
+        "status": "PENDING",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    # Broadcast to SSE so dashboard pops up the card immediately
+    await broadcast_event({
+        "stage": "STAGE-3-STATE-CHANGE",
+        "rule_id": "RULE-EGRESS-03-HITL",
+        "verdict": "REQUIRE_APPROVAL",
+        "action_id": req.action_id,
+        "action_type": req.action_type,
+        "selector": req.selector,
+        "target_url": req.target_url,
+        "reason": req.reason
+    })
+    return {"status": "created", "action_id": req.action_id}
 
-    # Step 4: State-Change Gating (Triggers Interactive Approval Card)
-    await emit_security_event(IngestEventRequest(
-        stage="STAGE-3-STATE-CHANGE",
-        rule_id="RULE-EGRESS-03-HITL",
-        verdict="REQUIRE_APPROVAL",
-        reason="STATE-CHANGE GATE: Agent is attempting to click 'Transfer Funds ($75,000)'. Action requires explicit human authorization.",
-        target_url="http://127.0.0.1:8081/invoice"
-    ))
 
-    return {"status": "demo_triggered"}
+@app.get("/api/approvals/status/{action_id}")
+def get_approval_status(action_id: str):
+    """Allows running agent to poll whether operator approved or denied the action."""
+    if action_id in PENDING_APPROVALS:
+        return PENDING_APPROVALS[action_id]
+    return {"action_id": action_id, "status": "NOT_FOUND"}
+
+
+class ResolveApprovalRequest(BaseModel):
+    action_id: str
+    decision: str  # "APPROVED" or "DENIED"
+
+
+@app.post("/api/approvals/resolve")
+async def resolve_approval_request(req: ResolveApprovalRequest):
+    """Called by dashboard UI when human operator clicks Authorize or Deny."""
+    if req.action_id in PENDING_APPROVALS:
+        PENDING_APPROVALS[req.action_id]["status"] = req.decision
+
+    await emit_security_event(IngestEventRequest(
+        stage="STAGE-3-HITL",
+        rule_id="RULE-HITL-RESOLVED",
+        verdict=req.decision,
+        reason=f"Human Operator {req.decision} action '{req.action_id}' in Dashboard."
+    ))
+    return {"status": "ok", "action_id": req.action_id, "decision": req.decision}
+
+
+@app.post("/api/agent/run")
+async def run_agent_execution(mode: str = "protected"):
+    """
+    Spawns real execution of the web_agent_test project in C:\\Users\\defaultuser100000\\web_agent_test.
+    Streams real-time terminal stdout & security events to the dashboard!
+    """
+    agent_dir = r"C:\Users\defaultuser100000\web_agent_test"
+    venv_python = os.path.join(agent_dir, ".venv", "Scripts", "python.exe")
+    python_bin = venv_python if os.path.exists(venv_python) else sys.executable
+    cmd = [python_bin, "run_real_world_agent_defense.py", "--mode", mode]
+
+    async def run_task():
+        await broadcast_event({
+            "stage": "AGENT-CONSOLE",
+            "rule_id": "INIT",
+            "verdict": "STARTING",
+            "reason": f"[*] Spawning real Python agent in {agent_dir} (mode={mode})..."
+        })
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=agent_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+            while True:
+                line = await proc.stdout.readline()
+                if not line:
+                    break
+                decoded = line.decode("utf-8", errors="replace").strip()
+                if decoded:
+                    await broadcast_event({
+                        "stage": "AGENT-CONSOLE",
+                        "rule_id": "STDOUT",
+                        "verdict": "LOG",
+                        "reason": decoded
+                    })
+            await proc.wait()
+            await broadcast_event({
+                "stage": "AGENT-CONSOLE",
+                "rule_id": "COMPLETED",
+                "verdict": "DONE",
+                "reason": f"[+] Agent execution finished with exit code {proc.returncode}."
+            })
+        except Exception as err:
+            await broadcast_event({
+                "stage": "AGENT-CONSOLE",
+                "rule_id": "ERROR",
+                "verdict": "ERROR",
+                "reason": f"[!] Error executing agent: {err}"
+            })
+
+    asyncio.create_task(run_task())
+    return {"status": "started", "mode": mode, "agent_dir": agent_dir}
 
 
 @app.get("/api/audit")
@@ -582,15 +738,3 @@ def get_audit_logs():
     rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return rows
-
-
-@app.post("/api/approvals/action")
-async def resolve_approval(payload: Dict[str, str]):
-    decision = payload.get("decision", "DENY")
-    await emit_security_event(IngestEventRequest(
-        stage="STAGE-3-HITL",
-        rule_id="RULE-HITL-RESOLVED",
-        verdict=decision,
-        reason=f"Human Operator resolved State-Change Gate with verdict: {decision}"
-    ))
-    return {"status": "ok", "decision": decision}
