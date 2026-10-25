@@ -81,10 +81,13 @@ GASHI implements the **Golden Rule of Agentic ML Systems**: *An LLM must never e
   exfiltrations to unapproved C2 domains)
 ```
 
-1. **Ingress DOM Sanitizer (`gashi.ingress`):** Parses untrusted HTML and strips non-visible or disguised injection payloads before LLM ingestion.
-2. **Egress Action Policy Engine (`gashi.egress`):** Deterministic evaluation under 50ms verifying destination domains, input canary leaks, and action consequence levels.
-3. **Network Route Interceptor (`gashi.network`):** Hooks into Playwright `page.route('**/*')` or CDP `Fetch.enable` to immediately terminate out-of-band C2 exfiltrations.
-4. **Approval Gate Callback:** Transparently pauses execution for sensitive operations (`delete`, `purchase`, `transfer`).
+1. **Stage 1: Ingress DOM Sanitizer (`gashi.ingress`):** Parses untrusted HTML and strips non-visible or disguised injection payloads (`display:none`, `-9999px` off-screen, zero-font, white-on-white) before LLM ingestion.
+2. **Stage 2: Egress Action Policy Engine (`gashi.egress`):** Deterministic evaluation under 5ms verifying destination domains, input canary leaks, and enforcing `read_only=True` mode.
+3. **Stage 3: State-Change Gating (`gashi.wrapper`):** Transparently pauses execution for sensitive operations (`delete`, `purchase`, `transfer`, `submit`) requiring Human-in-the-Loop (HITL) approval.
+4. **Stage 4: Network Route Interceptor (`gashi.network`):** Hooks into Playwright `page.route('**/*')` or CDP `Fetch.enable` to immediately terminate out-of-band C2 exfiltrations and dynamic image tracking beacons.
+5. **Stage 5: Vision & Screenshot Redaction Guard (`gashi.vision`):** Automatically computes bounding boxes of passwords, payment fields, and canary secrets, applying solid redactions over screenshot pixels before sending images to Vision LLMs.
+6. **Stage 6: Dynamic Taint Tracking & Provenance (`gashi.provenance`):** Enforces Information Flow Control (IFC). Prevents tainted external web data from escalating privileges to high-consequence tools without explicit user authorization.
+7. **Stage 7: Live Web Security Dashboard & Audit Trail (`gashi.dashboard`):** Real-time SSE streaming web console (`http://127.0.0.1:8500`), live HITL approval buttons, and durable SQLite audit logging (`audit.db`).
 
 ---
 
@@ -92,25 +95,31 @@ GASHI implements the **Golden Rule of Agentic ML Systems**: *An LLM must never e
 
 ```
 web_agent_security/
-├── gashi/                      # Core SDK package
-│   ├── __init__.py             # Public exports (GashiGuard, ProtectedPage, PolicyConfig)
+├── gashi/                      # Core SDK package (All 7 Defense Stages)
+│   ├── __init__.py             # Public exports (GashiGuard, VisionGuard, TaintTracker, PolicyConfig)
 │   ├── config.py               # Pydantic schemas (BrowserAction, PolicyDecision, PolicyConfig)
-│   ├── ingress.py              # Ingress DOMSanitizer
-│   ├── egress.py               # Egress ActionPolicyEngine
-│   ├── network.py              # NetworkRouteGuard (CDP/Playwright route handler)
-│   └── wrapper.py              # ProtectedPage proxy wrapper
-├── testbed/                    # Synthetic local vulnerable environment
-│   ├── __init__.py             # Testbed exports
-│   └── mock_server.py          # Offline HTTP server (/pricing, /review, /c2, /admin)
-├── tests/                      # Automated test suites (18 tests)
+│   ├── ingress.py              # Stage 1: Ingress DOMSanitizer
+│   ├── egress.py               # Stage 2: Egress ActionPolicyEngine
+│   ├── wrapper.py              # Stage 3: ProtectedPage proxy wrapper & HITL gates
+│   ├── network.py              # Stage 4: NetworkRouteGuard (CDP/Playwright route handler)
+│   ├── vision.py               # Stage 5: VisionGuard (Screenshot pixel masking for VLMs)
+│   ├── provenance.py           # Stage 6: TaintTracker (Information Flow Control & Provenance)
+│   ├── dashboard.py            # Stage 7: Live FastAPI Dashboard, SSE stream & SQLite audit trail
+│   └── adapters/
+│       └── tinyfish.py         # Native TinyFish Cloud Browser adapter
+├── testbed/                    # Synthetic local vulnerable environments
+│   ├── mock_server.py          # E-Commerce review testbed
+│   └── server_invoice_polluted_ui.py # Financial invoice & wire transfer testbed
+├── tests/                      # Automated test suites (35 tests)
+│   ├── test_all_7_stages.py    # Complete 7-stage verification suite
 │   ├── test_unit_security.py   # Ingress & egress unit tests
 │   ├── test_wrapper.py         # Playwright wrapper & network guard tests
-│   └── test_redteam.py         # Dual-run red-team benchmark suite
+│   ├── test_redteam.py         # Dual-run red-team benchmark suite
+│   └── test_tinyfish_integration.py # TinyFish cloud adapter tests
 ├── docs/                       # Architecture and threat model documentation
 │   ├── architecture.html       # Interactive visual architecture & decision matrix
 │   └── WEB_AGENT_SECURITY_PROBLEMS_AND_SOLUTIONS.md # Threat research & mitigations
-├── conftest.py                 # Pytest path resolution
-├── requirements.txt            # Minimal dependencies
+├── pyproject.toml              # Pip package distribution configuration
 ├── SPEC.md                     # Genesis requirements specification (FR/NFR/AC)
 └── README.md                   # Project overview & quickstart
 ```
