@@ -14,3 +14,9 @@ venv/
 .venv/
 test_env/
 env/
+*.db
+*.sqlite
+*.sqlite3
+audit.db
+test_audit.db
+.tmp*

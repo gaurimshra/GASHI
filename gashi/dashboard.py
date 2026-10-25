@@ -15,7 +15,8 @@ import json
 import time
 import sqlite3
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, Request
@@ -64,7 +65,7 @@ def record_audit_event(stage: str, rule_id: str, verdict: str, details: str, tar
         cursor.execute("""
             INSERT INTO audit_logs (timestamp, stage, rule_id, verdict, target_url, details, raw_payload)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (datetime.utcnow().isoformat(), stage, rule_id, verdict, target_url, details, raw_payload[:500]))
+        """, (datetime.now(timezone.utc).isoformat(), stage, rule_id, verdict, target_url, details, raw_payload[:500]))
         conn.commit()
         conn.close()
     except Exception as e:
@@ -85,7 +86,13 @@ async def broadcast_event(event: Dict[str, Any]):
             pass
 
 
-app = FastAPI(title="GASHI-Guard Security Dashboard")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="GASHI-Guard Security Dashboard", lifespan=lifespan)
 
 
 DASHBOARD_HTML = """<!DOCTYPE html>
@@ -319,11 +326,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 """
 
 
-@app.on_event("startup")
-def startup():
-    init_db()
-
-
 @app.get("/", response_class=HTMLResponse)
 def index():
     return DASHBOARD_HTML
@@ -398,3 +400,4 @@ async def resolve_approval(payload: Dict[str, str]):
         "reason": f"Human Operator resolved gate with decision: {decision}"
     })
     return {"status": "ok", "decision": decision}
+

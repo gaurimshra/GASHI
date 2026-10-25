@@ -180,3 +180,4 @@ class VisionGuard:
             return raw_screenshot
 
         return self.mask_image_bytes(raw_screenshot, boxes)
+

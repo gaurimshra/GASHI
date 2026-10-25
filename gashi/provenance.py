@@ -12,7 +12,7 @@ high-privilege or state-changing browser actions without explicit human de-taint
 
 from enum import Enum
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 from .config import BrowserAction, PolicyDecision
@@ -29,7 +29,7 @@ class ProvenanceTag(BaseModel):
     source_id: str
     source_type: str = Field(description="'user_prompt', 'web_page', 'tool_output'")
     trust_level: TrustLevel
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     url: Optional[str] = None
     fingerprint: Optional[str] = None
 
@@ -136,3 +136,4 @@ class TaintTracker:
         """De-taints active context after explicit user authorization."""
         self.active_taint_sources.clear()
         self.taint_active = False
+

@@ -198,3 +198,4 @@ def test_stage_7_sqlite_audit_logging():
 
     if os.path.exists(test_db):
         os.remove(test_db)
+
