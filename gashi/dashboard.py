@@ -1,12 +1,13 @@
 """
 Stage 7: Live Web Security Dashboard & Enterprise Audit Trail.
 
-Provides:
-1. Real-time Server-Sent Events (SSE) streaming of agent actions and security decisions.
-2. Interactive Human-in-the-Loop (HITL) approval buttons (Approve / Reject).
-3. Dual-Run Benchmark Comparison metrics (Unprotected vs. GASHI Zero-Trust).
-4. Durable SQLite audit logging (audit.db) for enterprise compliance and forensic playback.
-5. High-end Glassmorphic Cyber SOC Web Console running on FastAPI.
+Built with authentic shadcn/ui design system:
+- Zinc/Slate dark palette (zinc-950, zinc-900, zinc-800)
+- Tailwind CSS via CDN with customized shadcn theme tokens
+- Lucide SVG icons (ShieldCheck, Lock, AlertTriangle, Zap, Terminal, Database)
+- Real-time Server-Sent Events (SSE) streaming telemetry
+- Interactive Human-in-the-Loop approval modal
+- Dual-Run Benchmark comparison matrix & SQLite audit log playback
 """
 
 import os
@@ -40,6 +41,17 @@ def init_db(db_path: str = DB_PATH):
             target_url TEXT,
             details TEXT,
             raw_payload TEXT
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS pending_approvals (
+            action_id TEXT PRIMARY KEY,
+            timestamp TEXT NOT NULL,
+            action_type TEXT NOT NULL,
+            selector TEXT,
+            target_url TEXT,
+            reason TEXT NOT NULL,
+            status TEXT DEFAULT 'PENDING'
         )
     """)
     conn.commit()
@@ -83,275 +95,256 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="GASHI-Guard Security Dashboard", lifespan=lifespan)
 
 
-DASHBOARD_HTML = """<!DOCTYPE html>
-<html lang="en">
+SHADCN_DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GASHI-Guard &bull; Security Operations Center (SOC)</title>
+    <title>GASHI-Guard &bull; Security Operations Center</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#09090b',
+                        surface: '#121215',
+                        card: '#18181b',
+                        'card-hover': '#202024',
+                        border: '#27272a',
+                        muted: '#71717a',
+                        primary: '#fafafa',
+                        'primary-foreground': '#18181b',
+                        accent: '#38bdf8',
+                        danger: '#ef4444',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Menlo', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg-base: #060913;
-            --surface-glass: rgba(17, 24, 39, 0.75);
-            --surface-card: rgba(30, 41, 59, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
-            --border-glow: rgba(56, 189, 248, 0.3);
-            --accent-cyan: #38bdf8;
-            --accent-blue: #3b82f6;
-            --danger: #ef4444;
-            --danger-bg: rgba(239, 68, 68, 0.12);
-            --success: #10b981;
-            --success-bg: rgba(16, 185, 129, 0.12);
-            --warning: #f59e0b;
-            --warning-bg: rgba(245, 158, 11, 0.12);
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body {
-            background: radial-gradient(circle at 10% 20%, #0d1527 0%, var(--bg-base) 100%);
-            color: var(--text-main); min-height: 100vh; padding: 24px;
-        }
-
-        .header-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--surface-glass); backdrop-filter: blur(16px);
-            padding: 16px 24px; border-radius: 16px; border: 1px solid var(--border);
-            margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-        .brand-box { display: flex; align-items: center; gap: 14px; }
-        .brand-icon {
-            font-size: 24px; background: linear-gradient(135deg, #3b82f6, #38bdf8);
-            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        }
-        .brand-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
-        .brand-subtitle { font-size: 12px; color: var(--text-dim); }
-
-        .header-controls { display: flex; align-items: center; gap: 14px; }
-        .badge-live {
-            background: var(--success-bg); border: 1px solid var(--success); color: var(--success);
-            font-size: 11px; padding: 5px 12px; border-radius: 30px; font-weight: 700;
-            display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
-        }
-        .pulse-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); animation: pulse 1.6s infinite; }
-        @keyframes pulse { 0% { opacity: 0.3; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0.3; transform: scale(0.85); } }
-
-        .btn-demo-trigger {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
-            padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;
-            cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.15); transition: 0.2s;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-        }
-        .btn-demo-trigger:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6); }
-
-        /* KPI Metrics Grid */
-        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-        .stat-card {
-            background: var(--surface-glass); backdrop-filter: blur(12px);
-            border: 1px solid var(--border); border-radius: 14px; padding: 20px;
-            position: relative; overflow: hidden; transition: 0.2s;
-        }
-        .stat-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
-        .stat-label { font-size: 11px; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.05em; }
-        .stat-val { font-size: 32px; font-weight: 900; margin-top: 6px; }
-        .stat-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
-
-        /* Main Workspace Grid */
-        .workspace-grid { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
-        .panel {
-            background: var(--surface-glass); backdrop-filter: blur(16px);
-            border: 1px solid var(--border); border-radius: 16px; padding: 22px;
-            display: flex; flex-direction: column;
-        }
-        .panel-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px;
-        }
-        .panel-title { font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
-        .panel-subtitle { font-size: 12px; color: var(--text-dim); }
-
-        /* Live Event Feed */
-        .feed-container {
-            height: 480px; overflow-y: auto; display: flex; flex-direction: column;
-            gap: 12px; padding-right: 6px;
-        }
-        .feed-container::-webkit-scrollbar { width: 5px; }
-        .feed-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        .event-card {
-            background: var(--surface-card); border-left: 4px solid var(--accent-cyan);
-            padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);
-            animation: slideIn 0.25s ease-out; position: relative;
-        }
-        .event-card.block { border-left-color: var(--danger); background: var(--danger-bg); }
-        .event-card.approval { border-left-color: var(--warning); background: var(--warning-bg); }
-        .event-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 700; font-size: 13px; }
-        .event-rule { font-family: monospace; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.3); }
-        .event-body { font-size: 12px; color: #cbd5e1; line-height: 1.45; }
-        .event-time { font-size: 11px; color: #64748b; font-family: monospace; }
-
-        /* Interactive Approval Card */
-        .approval-card {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.1));
-            border: 1px solid var(--warning); border-radius: 12px; padding: 18px; margin-bottom: 16px;
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); animation: pulseApproval 2s infinite;
-        }
-        @keyframes pulseApproval { 0% { border-color: rgba(245, 158, 11, 0.4); } 50% { border-color: var(--warning); } 100% { border-color: rgba(245, 158, 11, 0.4); } }
-        .approval-header { font-weight: 800; font-size: 13px; color: #fbbf24; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-        .approval-btns { display: flex; gap: 10px; margin-top: 14px; }
-        .btn-act { padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; border: none; transition: 0.15s; }
-        .btn-approve { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-        .btn-approve:hover { transform: scale(1.02); }
-        .btn-reject { background: var(--danger); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
-        .btn-reject:hover { transform: scale(1.02); }
-
-        /* Dual-Run Benchmark Matrix */
-        .matrix-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .matrix-table th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        .matrix-table td { padding: 12px; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .val-danger { color: var(--danger); font-weight: 800; }
-        .val-success { color: var(--success); font-weight: 800; }
-
-        /* Forensic Audit Stream */
-        .audit-list { max-height: 180px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-        .audit-item { background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border-left: 3px solid #64748b; }
-
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        body { background-color: #09090b; color: #fafafa; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body>
-    <!-- Top Header -->
-    <div class="header-bar">
-        <div class="brand-box">
-            <div class="brand-icon">🛡️</div>
-            <div>
-                <div class="brand-title">GASHI-GUARD SOC DASHBOARD</div>
-                <div class="brand-subtitle">Autonomous Browser Agent Security Runtime &bull; 7 Defense Stages Active</div>
-            </div>
-        </div>
-        <div class="header-controls">
-            <button class="btn-demo-trigger" onclick="triggerLiveDemoAttack()">▶ Trigger Live Attack Demo</button>
-            <div class="badge-live">
-                <div class="pulse-dot"></div>
-                <span>RUNTIME DEFENSE ARMED</span>
-            </div>
-        </div>
-    </div>
+<body class="bg-background text-zinc-100 min-h-screen antialiased selection:bg-zinc-800 selection:text-zinc-100 p-6 md:p-8">
 
-    <!-- KPI Metrics Grid -->
-    <div class="grid-stats">
-        <div class="stat-card">
-            <div class="stat-label">Injections Neutralized</div>
-            <div class="stat-val" id="stat-injections" style="color: #38bdf8;">0</div>
-            <div class="stat-sub">Stage 1 Ingress Sanitizer</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Canary Leaks Prevented</div>
-            <div class="stat-val" id="stat-canaries" style="color: #34d399;">0</div>
-            <div class="stat-sub">Stage 2 &amp; Stage 4 Interceptors</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">State-Change Gates Triggered</div>
-            <div class="stat-val" id="stat-gates" style="color: #fbbf24;">0</div>
-            <div class="stat-sub">Stage 3 &amp; Stage 6 HITL Pauses</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Decision Latency</div>
-            <div class="stat-val" style="color: #a78bfa;">&lt; 1 ms</div>
-            <div class="stat-sub">NFR Target: &lt; 50 ms</div>
-        </div>
-    </div>
+    <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- Workspace Grid -->
-    <div class="workspace-grid">
-        <!-- Live SOC Stream -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">⚡ REAL-TIME FORENSIC EVENT STREAM</div>
-                    <div class="panel-subtitle">Live Server-Sent Events (SSE) telemetry from active browser sessions</div>
+        <!-- Top Navigation / Breadcrumbs -->
+        <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-border gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2 text-xs text-muted font-medium">
+                    <span>Platform</span>
+                    <span>/</span>
+                    <span>Security Runtime</span>
+                    <span>/</span>
+                    <span class="text-zinc-200">Active Defense SOC</span>
                 </div>
-                <div style="font-size: 11px; color: #34d399; font-family: monospace;" id="conn-status">&bull; Streaming (Connected)</div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-border flex items-center justify-center text-accent">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">GASHI-Guard Runtime</h1>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        7 Stages Armed
+                    </span>
+                </div>
             </div>
 
-            <!-- Pending Human Approval Modal Insertion -->
-            <div id="approval-slot"></div>
+            <!-- Controls -->
+            <div class="flex items-center gap-3">
+                <button onclick="triggerLiveDemoAttack()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-md transition shadow-sm active:scale-95">
+                    <svg class="w-3.5 h-3.5 text-zinc-900" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    Trigger Attack Demo
+                </button>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-900 border border-border text-xs text-muted font-mono" id="conn-pill">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    SSE Connected
+                </div>
+            </div>
+        </header>
 
-            <div class="feed-container" id="feed-box">
-                <div class="event-card">
-                    <div class="event-top" style="color: #38bdf8;">
-                        <span>[STAGE-0] SYSTEM READY</span>
-                        <span class="event-time">Init</span>
-                    </div>
-                    <div class="event-body">
-                        GASHI Zero-Trust security middleware attached to Playwright / TinyFish execution pipeline.
+        <!-- KPI Metrics Grid (shadcn Cards) -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Ingress Card -->
+            <div class="p-5 rounded-xl bg-card border border-border shadow-sm hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted uppercase tracking-wider">Injections Neutralized</span>
+                    <div class="w-7 h-7 rounded-md bg-zinc-900 border border-border flex items-center justify-center text-sky-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     </div>
                 </div>
+                <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-injections">0</div>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 1: DOMSanitizer</p>
             </div>
-        </div>
 
-        <!-- Right Side: Dual-Run Benchmark & Audit Logs -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">📊 DUAL-RUN RED-TEAM BENCHMARK</div>
-                    <div class="panel-subtitle">Baseline Agent vs. GASHI-Protected Runtime</div>
+            <!-- Canary Leaks Card -->
+            <div class="p-5 rounded-xl bg-card border border-border shadow-sm hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted uppercase tracking-wider">Canary Leaks Prevented</span>
+                    <div class="w-7 h-7 rounded-md bg-zinc-900 border border-border flex items-center justify-center text-emerald-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-canaries">0</div>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 2 &amp; 4 Policy Engine</p>
+            </div>
+
+            <!-- State-Change Gates Card -->
+            <div class="p-5 rounded-xl bg-card border border-border shadow-sm hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted uppercase tracking-wider">State-Change Gates</span>
+                    <div class="w-7 h-7 rounded-md bg-zinc-900 border border-border flex items-center justify-center text-amber-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold tracking-tight text-white mt-2" id="stat-gates">0</div>
+                <p class="text-[11px] text-muted mt-1 font-mono">Stage 3 &amp; 6 HITL Pauses</p>
+            </div>
+
+            <!-- Latency Card -->
+            <div class="p-5 rounded-xl bg-card border border-border shadow-sm hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted uppercase tracking-wider">Policy Decision Latency</span>
+                    <div class="w-7 h-7 rounded-md bg-zinc-900 border border-border flex items-center justify-center text-violet-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold tracking-tight text-white mt-2">&lt; 1 ms</div>
+                <p class="text-[11px] text-muted mt-1 font-mono">Strict Target: &lt; 50 ms</p>
+            </div>
+
+        </section>
+
+        <!-- Main Workspace (2-Column Grid) -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left: Real-Time Event Stream (7 Columns) -->
+            <div class="lg:col-span-7 space-y-4">
+                <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
+                    <div class="flex items-center justify-between pb-4 border-b border-border">
+                        <div class="space-y-0.5">
+                            <h2 class="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-accent"></span>
+                                Live Telemetry Stream
+                            </h2>
+                            <p class="text-xs text-muted">Server-Sent Events emitted by Playwright runtime &amp; policies</p>
+                        </div>
+                        <span class="text-[11px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-border" id="stream-time">Listening...</span>
+                    </div>
+
+                    <!-- Interactive Approval Dialog (Injected dynamically) -->
+                    <div id="approval-slot" class="mt-4"></div>
+
+                    <!-- Stream Container -->
+                    <div class="mt-4 space-y-2.5 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar" id="feed-box">
+                        <div class="p-3.5 rounded-lg bg-surface border border-border/80 flex items-start justify-between gap-3 text-xs">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 font-mono">
+                                    <span class="text-accent font-semibold">[STAGE-0] SYSTEM_INIT</span>
+                                    <span class="text-muted">RULE-INIT-READY</span>
+                                </div>
+                                <p class="text-zinc-300">GASHI Zero-Trust security runtime hooked into active browser session.</p>
+                            </div>
+                            <span class="text-[10px] text-muted font-mono whitespace-nowrap">Ready</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <table class="matrix-table">
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Raw Agent</th>
-                        <th>GASHI Guard</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Indirect Prompt Hijack</td>
-                        <td class="val-danger">100% (Hijacked)</td>
-                        <td class="val-success">0% (Clean)</td>
-                    </tr>
-                    <tr>
-                        <td>Canary Secret Leak</td>
-                        <td class="val-danger">100% Leaked</td>
-                        <td class="val-success">0% Leak Rate</td>
-                    </tr>
-                    <tr>
-                        <td>Destructive Action Gate</td>
-                        <td class="val-danger">Executed Blindly</td>
-                        <td class="val-success">Gated by HITL</td>
-                    </tr>
-                    <tr>
-                        <td>Network Beacon Leaks</td>
-                        <td class="val-danger">Transmitted</td>
-                        <td class="val-success">Dropped by CDP</td>
-                    </tr>
-                    <tr>
-                        <td>False Positive Rate</td>
-                        <td style="color: #cbd5e1;">N/A</td>
-                        <td class="val-success">0.0%</td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Right: Dual-Run Matrix & Audit Trail (5 Columns) -->
+            <div class="lg:col-span-5 space-y-4">
+                
+                <!-- Dual-Run Benchmark Card -->
+                <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
+                    <div class="pb-3 border-b border-border space-y-0.5">
+                        <h2 class="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Dual-Run Red-Team Matrix
+                        </h2>
+                        <p class="text-xs text-muted">Baseline Unprotected Agent vs. GASHI Defense</p>
+                    </div>
 
-            <div class="panel-header" style="margin-top: 24px;">
-                <div>
-                    <div class="panel-title">📁 SQLITE DURABLE AUDIT TRAIL</div>
-                    <div class="panel-subtitle">Immutable compliance records stored in <code>audit.db</code></div>
+                    <div class="mt-3 divide-y divide-border/60 text-xs">
+                        <div class="py-2.5 flex items-center justify-between">
+                            <span class="text-zinc-300">Indirect Prompt Hijack</span>
+                            <div class="flex items-center gap-3 font-mono font-medium">
+                                <span class="text-red-400">100% Fail</span>
+                                <span class="text-emerald-400 font-bold">0% (Safe)</span>
+                            </div>
+                        </div>
+                        <div class="py-2.5 flex items-center justify-between">
+                            <span class="text-zinc-300">Canary Secret Exfiltration</span>
+                            <div class="flex items-center gap-3 font-mono font-medium">
+                                <span class="text-red-400">Leaked</span>
+                                <span class="text-emerald-400 font-bold">Blocked</span>
+                            </div>
+                        </div>
+                        <div class="py-2.5 flex items-center justify-between">
+                            <span class="text-zinc-300">High-Risk State Change</span>
+                            <div class="flex items-center gap-3 font-mono font-medium">
+                                <span class="text-red-400">Executed</span>
+                                <span class="text-amber-400 font-bold">Gated</span>
+                            </div>
+                        </div>
+                        <div class="py-2.5 flex items-center justify-between">
+                            <span class="text-zinc-300">Network CDP Beacon Leak</span>
+                            <div class="flex items-center gap-3 font-mono font-medium">
+                                <span class="text-red-400">Sent</span>
+                                <span class="text-emerald-400 font-bold">Dropped</span>
+                            </div>
+                        </div>
+                        <div class="py-2.5 flex items-center justify-between">
+                            <span class="text-zinc-300">False-Positive Rate</span>
+                            <div class="flex items-center gap-3 font-mono font-medium">
+                                <span class="text-muted">N/A</span>
+                                <span class="text-emerald-400 font-bold">0.0%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-act" style="background: #334155; color: white;" onclick="refreshAuditLogs()">Refresh DB</button>
+
+                <!-- SQLite Durable Audit Trail Card -->
+                <div class="p-5 rounded-xl bg-card border border-border shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-border">
+                        <div class="space-y-0.5">
+                            <h2 class="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                                <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                                Durable Audit Trail
+                            </h2>
+                            <p class="text-xs text-muted">Immutable forensic events in <code>audit.db</code></p>
+                        </div>
+                        <button onclick="refreshAuditLogs()" class="p-1 text-muted hover:text-white rounded hover:bg-zinc-800 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="mt-3 space-y-1.5 max-h-[170px] overflow-y-auto pr-1 text-[11px] font-mono custom-scrollbar" id="audit-list">
+                        <div class="p-2 rounded bg-surface text-muted">No audit events recorded yet.</div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="audit-list" id="audit-list">
-                <div class="audit-item">Audit database initialized. No events yet.</div>
-            </div>
-        </div>
+        </main>
+
     </div>
 
+    <!-- Live Client Script -->
     <script>
         let counterInjections = 0;
         let counterCanaries = 0;
@@ -359,42 +352,49 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         const evtSource = new EventSource("/api/events");
         evtSource.onopen = () => {
-            document.getElementById('conn-status').innerText = '• Streaming (Connected)';
-            document.getElementById('conn-status').style.color = '#34d399';
+            document.getElementById('conn-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> SSE Connected';
+            document.getElementById('stream-time').innerText = 'Live Feed Active';
         };
         evtSource.onerror = () => {
-            document.getElementById('conn-status').innerText = '• Reconnecting...';
-            document.getElementById('conn-status').style.color = '#fbbf24';
+            document.getElementById('conn-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span> Reconnecting...';
         };
 
         evtSource.onmessage = (e) => {
             try {
                 const data = JSON.parse(e.data);
-                handleSecurityEvent(data);
+                renderSecurityEvent(data);
             } catch(err) {}
         };
 
-        function handleSecurityEvent(ev) {
+        function renderSecurityEvent(ev) {
             const feed = document.getElementById('feed-box');
             const card = document.createElement('div');
             
-            let cardClass = 'event-card';
-            let color = '#38bdf8';
-            if (ev.verdict === 'BLOCK') { cardClass += ' block'; color = '#f87171'; }
-            if (ev.verdict === 'REQUIRE_APPROVAL') { cardClass += ' approval'; color = '#fbbf24'; }
+            let badgeClass = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+            let borderClass = 'border-border';
+            let verdictLabel = ev.verdict || 'EVENT';
 
-            card.className = cardClass;
+            if (ev.verdict === 'BLOCK') {
+                badgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
+                borderClass = 'border-red-500/40 bg-red-950/10';
+            } else if (ev.verdict === 'REQUIRE_APPROVAL') {
+                badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                borderClass = 'border-amber-500/40 bg-amber-950/10';
+            }
+
+            card.className = `p-3.5 rounded-lg bg-surface border ${borderClass} flex flex-col gap-1.5 text-xs transition duration-200 hover:border-zinc-600`;
             const timeStr = new Date().toLocaleTimeString();
 
             card.innerHTML = `
-                <div class="event-top" style="color: ${color}">
-                    <span>[${ev.stage || 'SECURITY'}] ${ev.verdict}</span>
-                    <span class="event-rule">${ev.rule_id || 'INFO'}</span>
-                    <span class="event-time">${timeStr}</span>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 font-mono">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeClass}">${verdictLabel}</span>
+                        <span class="text-zinc-200 font-semibold">${ev.stage || 'SECURITY'}</span>
+                        <span class="text-muted hidden sm:inline">&bull; ${ev.rule_id || 'RULE-DEFENSE'}</span>
+                    </div>
+                    <span class="text-[10px] text-muted font-mono">${timeStr}</span>
                 </div>
-                <div class="event-body">
-                    ${ev.reason || ev.details || 'Security event processed.'}
-                </div>
+                <p class="text-zinc-300 leading-relaxed font-sans text-[12px]">${ev.reason || ev.details || 'Security boundary enforced.'}</p>
             `;
             feed.prepend(card);
 
@@ -407,26 +407,33 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             }
             if (ev.verdict === 'REQUIRE_APPROVAL') {
                 counterGates++; document.getElementById('stat-gates').innerText = counterGates;
-                displayApprovalModal(ev);
+                renderShadcnApprovalModal(ev);
             }
 
             refreshAuditLogs();
         }
 
-        function displayApprovalModal(ev) {
+        function renderShadcnApprovalModal(ev) {
             const slot = document.getElementById('approval-slot');
             const id = 'approval_' + Date.now();
             slot.innerHTML = `
-                <div class="approval-card" id="${id}">
-                    <div class="approval-header">
-                        <span>⚠️ STAGE 3 HUMAN APPROVAL GATE TRIGGERED</span>
+                <div class="p-4 rounded-xl bg-amber-950/20 border border-amber-500/50 shadow-lg space-y-3" id="${id}">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-xs font-bold text-amber-300 tracking-wide uppercase">Stage 3 Gate: Human Approval Required</h3>
+                            <p class="text-xs text-zinc-300 leading-normal">${ev.reason || 'Agent is attempting high-consequence state change.'}</p>
+                        </div>
                     </div>
-                    <div style="font-size: 13px; color: #fef3c7; line-height: 1.4;">
-                        ${ev.reason || 'Agent is attempting high-consequence state change.'}
-                    </div>
-                    <div class="approval-btns">
-                        <button class="btn-act btn-approve" onclick="resolveGate('${id}', 'APPROVE')">✓ Authorize Action</button>
-                        <button class="btn-act btn-reject" onclick="resolveGate('${id}', 'DENY')">✕ Deny Action</button>
+                    <div class="flex items-center gap-2.5 pt-1 pl-11">
+                        <button onclick="resolveGate('${id}', 'APPROVE')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
+                            ✓ Authorize Action
+                        </button>
+                        <button onclick="resolveGate('${id}', 'DENY')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-zinc-800 hover:bg-red-950 text-zinc-300 hover:text-red-400 border border-zinc-700 transition">
+                            ✕ Deny Action
+                        </button>
                     </div>
                 </div>
             `;
@@ -453,8 +460,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const list = document.getElementById('audit-list');
                 if (logs && logs.length > 0) {
                     list.innerHTML = logs.map(l => `
-                        <div class="audit-item">
-                            [${l.timestamp.substring(11,19)}] <strong>${l.stage}</strong>: ${l.verdict} (${l.rule_id}) &bull; ${l.details.substring(0, 50)}...
+                        <div class="p-2 rounded bg-surface border border-border/60 flex items-center justify-between gap-2">
+                            <span class="text-zinc-300"><strong class="text-white">${l.stage}</strong> &bull; ${l.verdict} (${l.rule_id})</span>
+                            <span class="text-[10px] text-muted whitespace-nowrap">${l.timestamp.substring(11,19)}</span>
                         </div>
                     `).join('');
                 }
@@ -471,7 +479,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return DASHBOARD_HTML
+    return SHADCN_DASHBOARD_HTML
 
 
 @app.get("/api/events")
@@ -530,7 +538,7 @@ async def trigger_live_demo_sequence():
         reason="Neutralized hidden -9999px off-screen container & zero-font injection in 4.2ms.",
         target_url="http://127.0.0.1:8081/invoice"
     ))
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.35)
 
     # Step 2: Egress Canary Secret Leak Intercepted
     await emit_security_event(IngestEventRequest(
@@ -540,7 +548,7 @@ async def trigger_live_demo_sequence():
         reason="CANARY LEAK DETECTED: Action attempts to leak protected token 'CORP_SECRET_8812' to 'attacker-c2.xyz'.",
         target_url="https://attacker-c2.xyz/exfiltrate"
     ))
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.35)
 
     # Step 3: Network Route Interceptor
     await emit_security_event(IngestEventRequest(
@@ -550,7 +558,7 @@ async def trigger_live_demo_sequence():
         reason="Network packet dropped: Outbound dynamic <img> tag attempted background beacon to unapproved C2.",
         target_url="https://attacker-c2.xyz/ping.gif"
     ))
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.35)
 
     # Step 4: State-Change Gating (Triggers Interactive Approval Card)
     await emit_security_event(IngestEventRequest(
